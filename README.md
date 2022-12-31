@@ -1,1 +1,1 @@
-Hello World!
+1. To run the data visualization goto src/ folder and run py main.py
