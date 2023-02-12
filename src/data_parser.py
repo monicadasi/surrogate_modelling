@@ -100,9 +100,14 @@ class DataParser():
                 dframe.at[idx, 'Phase(Deg)'] = np.angle(cn, deg=True)
                 dframe.at[idx, 'Phase(Rad)'] = np.angle(cn)
 
-        frf_df = pd.concat(df_list, ignore_index=True)
-        frf_df.to_csv(os.path.realpath(
+        self.frf_df = pd.concat(df_list, ignore_index=True)
+        self.frf_df.to_csv(os.path.realpath(
             '{0}/data/final_frf_data.csv'.format(dirpath)))
-        frf_df.to_csv(os.path.realpath(
+        self.frf_df.to_csv(os.path.realpath(
             '{0}/data/final_frf_data.txt'.format(dirpath)), sep='\t', index=False)
-        return frf_df
+        return self.frf_df
+
+    def get_freq_data(self):
+        self.frf_df = pd.read_csv(os.path.realpath(
+            '{0}/data/final_frf_data.csv'.format(dirpath)))
+        return self.frf_df
