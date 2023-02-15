@@ -2,21 +2,23 @@ import os
 import natsort
 import pandas as pd
 import numpy as np
-import utils
+from utils import Utils
+import logging
 
-# fetch the file directory and filename
-dirpath = utils.get_dir_path()
-fname = os.path.realpath('{0}/data/200_ds.txt'.format(dirpath))
-fsplit_path = os.path.realpath('{0}/data/file_split'.format(dirpath))
-fout_path = os.path.realpath('{0}/data/file_output'.format(dirpath))
+# fetch the data directory and construct filename
+_data_path = Utils().get_data_dir_path()
+fname = os.path.realpath('{0}/200_ds.txt'.format(_data_path))
+fsplit_path = os.path.realpath('{0}/file_split'.format(_data_path))
+fout_path = os.path.realpath('{0}/file_output'.format(_data_path))
 ext = ('.txt')
 lambda_val = []
 
+log = logging.getLogger(__name__)
 
 class DataParser():
     def parse_freq_data(self):
         # Split the data into small chunks based on a literal '#Parameters' as split criteria
-        #print("File Path : ", fsplit_path)
+        #log.info("File Path : ", fsplit_path)
         with open(fname) as f:
             wsplit = ''
             f_out = None
@@ -29,7 +31,7 @@ class DataParser():
                     lambda_val.append(float(wsplit))
                     i = i + 1
                     title = 'file-' + str(i)
-                    # print(title)
+                    # log.info(title)
                     if f_out:
                         f_out.close()
                     f_out = open(f'{fsplit_path}\\{title}.txt', 'w')
@@ -48,7 +50,7 @@ class DataParser():
 
         for file in flist:
             if file.endswith(ext):
-                # print(id, " : ", file)
+                # log.info(id, " : ", file)
                 with open(f'{fsplit_path}\\{file}', 'r') as fin:
                     data = fin.read().splitlines(True)
                 with open(f'{fout_path}\\file{id}_out.txt', 'w') as fout:
@@ -88,7 +90,7 @@ class DataParser():
             # list of dataframes containing data corresponding to each lambda param
             df_list.append(val)
 
-        #print(len(df_list))
+        #log.info(len(df_list))
 
         # calculate the magnitude using real and imaginary values from data
         for dframe in df_list:
@@ -102,12 +104,16 @@ class DataParser():
 
         self.frf_df = pd.concat(df_list, ignore_index=True)
         self.frf_df.to_csv(os.path.realpath(
-            '{0}/data/final_frf_data.csv'.format(dirpath)))
+            '{0}/final_frf_data.csv'.format(_data_path)))
         self.frf_df.to_csv(os.path.realpath(
-            '{0}/data/final_frf_data.txt'.format(dirpath)), sep='\t', index=False)
+            '{0}/final_frf_data.txt'.format(_data_path)), sep='\t', index=False)
         return self.frf_df
 
     def get_freq_data(self):
-        self.frf_df = pd.read_csv(os.path.realpath(
-            '{0}/data/final_frf_data.csv'.format(dirpath)))
+        f_name = os.path.realpath('{0}/final_frf_data.csv'.format(_data_path))
+        if os.path.isfile(f_name):
+            self.frf_df = pd.read_csv(f_name)
+        else:
+            # doesn't exist
+            log.info("DataParser():File not found.")
         return self.frf_df

@@ -2,26 +2,30 @@ import os
 import random
 import utils
 import json
+import logging
 import plotly.graph_objects as go
 
 from pathlib import Path
 from data_parser import DataParser
 from singleton import Singleton
+from utils import Utils
 
+log = logging.getLogger(__name__)
 
 class DataVisualizer(metaclass=Singleton):
 
     def __init__(self):
+        self._res_path = Utils().get_results_dir_path()
         dataparser = DataParser()
         with open('config.json', 'r') as f:
             config = json.load(f)
         if config['parse_data'] == "True":
-            print("Processing the frequency data ...")
+            log.info("Processing the frequency data ...")
             dataparser.parse_freq_data()
             dataparser.process_data()
             self.frf_df = dataparser.create_data_frame()
         else:
-            print("data is available...fast forwarding...")
+            log.info("data is available...fast forwarding...")
             self.frf_df = dataparser.get_freq_data()
 
     def get_freq_dataframe(self):
@@ -29,11 +33,11 @@ class DataVisualizer(metaclass=Singleton):
 
     def plot_frf_data(self):
         plt_name = os.path.realpath(
-            '{0}/results/frf_plot.html'.format(utils.get_dir_path()))
+            '{0}/frf_plot.html'.format(self._res_path))
         if Path(plt_name).is_file():
-            print("Frequency Plot exists, skipping...")
+            log.info("Frequency Plot exists, skipping...")
         else:
-            print("plotting frequency curves...")
+            log.info("Plotting Frequency Curves...")
             large_rockwell_template = dict(
                 layout=go.Layout(title_font=dict(family="Rockwell", size=24)))
 
@@ -44,11 +48,11 @@ class DataVisualizer(metaclass=Singleton):
 
             # extract the 'Lambda'values from dataframe
             lm_lst = frf_df2.apply(lambda row: row['Lambda'], axis=1).tolist()
-            # print(type(lm_lst))
+            # log.info(type(lm_lst))
 
             # remove the duplicate values from the list
             lm_lst = list(dict.fromkeys(lm_lst))
-            # print(len(lm_lst))
+            # log.info(len(lm_lst))
 
             for b in lm_lst:
                 if not frf_df2.empty:
@@ -83,11 +87,11 @@ class DataVisualizer(metaclass=Singleton):
 
     def draw_mag_parameter_plot(self):
         plt_name = os.path.realpath(
-            '{0}/results/lambda_mag_plot.html'.format(utils.get_dir_path()))
+            '{0}/lambda_mag_plot.html'.format(self._res_path))
         if Path(plt_name).is_file():
-            print("Magnitude Vs S-Paramater Plot exists, skipping...")
+            log.info("Magnitude Vs S-Paramater Plot exists, skipping...")
         else:
-            print("Plotting Magnitude Vs S-Parameter...")
+            log.info("Plotting Magnitude Vs S-Parameter...")
             # set the graph template in plotly
             large_rockwell_template = dict(
                 layout=go.Layout(title_font=dict(family="Rockwell", size=24)))
@@ -96,13 +100,13 @@ class DataVisualizer(metaclass=Singleton):
             fq_lst = frf_df1.apply(
                 lambda row: row['Frequency'], axis=1).tolist()
 
-            # print(type(fq_lst))
-            # print(len(fq_lst))
+            # log.info(type(fq_lst))
+            # log.info(len(fq_lst))
 
             # remove the duplicate values from the list
             # this is done to extract the values of lambda and magnitude at a given frequency
             fq_lst = list(dict.fromkeys(fq_lst))
-            # print(len(fq_lst))
+            # log.info(len(fq_lst))
 
             # Create traces
             fig = go.Figure()
@@ -144,11 +148,11 @@ class DataVisualizer(metaclass=Singleton):
 
     def draw_polar_plot(self):
         plt_name = os.path.realpath(
-            '{0}/results/polar_plot.html'.format(utils.get_dir_path()))
+            '{0}/polar_plot.html'.format(self._res_path))
         if Path(plt_name).is_file():
-            print("Polar Plot exists, skipping...")
+            log.info("Polar Plot exists, skipping...")
         else:
-            print("Plotting polar plot")
+            log.info("Plotting polar plot")
             frf_df3 = self.frf_df.copy(deep=True)
             frf_df3 = frf_df3.sort_values('Lambda')
 
@@ -162,7 +166,7 @@ class DataVisualizer(metaclass=Singleton):
             lm_lst = frf_df3.apply(lambda row: row['Lambda'], axis=1).tolist()
             # remove the duplicate lambda values
             lm_lst = list(dict.fromkeys(lm_lst))
-            # print(len(lm_lst))
+            # log.info(len(lm_lst))
 
             for b in lm_lst:
                 if not frf_df3.empty:

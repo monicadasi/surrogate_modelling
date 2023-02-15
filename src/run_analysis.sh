@@ -1,0 +1,2 @@
+reset
+python main.py
