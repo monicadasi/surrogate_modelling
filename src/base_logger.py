@@ -1,4 +1,7 @@
+import os
 import logging
+import utils
+import time
 
 FORMAT_STR = '%(asctime)s [%(levelname)s] %(message)s'
 DATE_FMT = '%Y-%m-%d %H:%M:%S'
@@ -8,13 +11,20 @@ class BaseLogger:
         root = logging.getLogger()
         root.setLevel(logging.NOTSET)
 
-        # set up logging to console
-        console = logging.StreamHandler()
-        console.setLevel(log_level)
-
-        # set a format which is simpler for console use
+        # setup logging to console handler
+        ch = logging.StreamHandler()
+        ch.setLevel(log_level)
+        # set console format
         formatter = logging.Formatter(FORMAT_STR, datefmt=DATE_FMT)
-        console.setFormatter(formatter)
+        ch.setFormatter(formatter)
+        # add the console handler to the root logger
+        root.addHandler(ch)
 
-        # add the handler to the root logger
-        root.addHandler(console)
+        _log_dir = utils.Utils().get_log_dir_path()
+        _file = '{0}/' + f'{time.strftime("%Y%m%d_%H%M%S")}_log.txt'
+        f_name = os.path.realpath(_file.format(_log_dir))
+        # setup file handler logger
+        fh = logging.FileHandler(f_name, mode='w', delay=True)
+        fh.setFormatter(formatter)
+        fh.setLevel(log_level)
+        root.addHandler(fh)

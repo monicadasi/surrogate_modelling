@@ -6,6 +6,7 @@ import logging
 
 import time
 from datetime import timedelta
+from humanfriendly import format_timespan
 
 import matplotlib
 #matplotlib.use('GTK3Agg') 
@@ -126,7 +127,8 @@ class LeastSquaresCircle():
         frf_df_cp = DataVisualizer().get_freq_dataframe()
         frf_df6 = frf_df_cp.copy(deep=True)
         # frf_df6 = frf_df6.sort_values('Lambda')
-
+        # Pick the each row of these columns containing frequency, lambda, S1 real, S1 imaginary
+        # and form a list of each row containing these column values.
         self.orgDF_list = frf_df6.apply(lambda row:
                                         [row['Frequency']]
                                         + [row['Lambda']]
@@ -139,21 +141,25 @@ class LeastSquaresCircle():
 
         # pick a random frequency from the data , 'n' denotes : number of samples to be picked
         # In this case we just pick one frequency and create a model for that.
-        df_elements = frf_df6.sample(n=100)
-        # contains the row of the picked frequency
-        log.info(f'<--------- Randomly Picked Row --------->\n{df_elements}')
+        # df_elements = frf_df6.sample(n=100)
+        # # contains the row of the picked frequency
+        # log.info(f'<--------- Randomly Picked Row --------->\n{df_elements}')
 
         start_time = time.monotonic()
-        log.info('-------------------START--------------------------')
+        log.info('------------------- START --------------------------')
 
         # ----------------------------------------------------------------------------------------------------------------
 
         # extract the freq. to a list
-        frq_list = df_elements['Frequency'].to_list()
-        log.info(f'Frequency List Size : {len(frq_list)}')
-        for count, frq in enumerate(frq_list):
+        #frq_list = df_elements['Frequency'].to_list()
+        frq_list = frf_df6['Frequency'].to_list()
+        _frqs = list(dict.fromkeys(frq_list)) # remove the duplicate freq.
+        #log.info(f'Frequency List Size : {len(_frqs)}')
+
+        log.info(f'Frequency List Size : {len(_frqs)}')
+        for i, frq in enumerate(_frqs, start=1):
             # extracted frequency.
-            log.info('Picked Frequency : {0} , processing freq. {1} '.format(frq, count))
+            log.info('Picked Frequency : {0} , Processing freq. {1}'.format(frq, i))
             # For the picked frequency extract all the matching rows
             if not frf_df6.empty:
                 result_df = frf_df6[frf_df6['Frequency'].isin([frq])]
@@ -212,14 +218,14 @@ class LeastSquaresCircle():
                 self.x = []
                 self.y = []
                 freq_pts = []
-                for count, val in enumerate(info):
+                for item in info:
                     # 0 : Freq and 1 : Lambda from 2: Coordinates
-                    coord = tuple(val[2:])
+                    coord = tuple(item[2:])
                     # extract the first element of the tuple into list
                     self.x.append(coord[0])
                     # extract the second element of the tuple into a list
                     self.y.append(coord[1])
-                    freq_pts.append(val[0])
+                    freq_pts.append(item[0])
                 self.x = r_[self.x]  # convert to numpy array
                 self.y = r_[self.y]
                 # print('--------------------------------------------------------------------------------------')
@@ -231,8 +237,8 @@ class LeastSquaresCircle():
                 # h,k,radius = np.float64(three_point_circle(*coord))
                 h, k, radius = np.float64(
                     self.least_square_circle_extraction(self.x, self.y))
-                log.debug("\n=> center(h : {0}, k : {1}), radius : {2}".format(
-                    h, k, radius))
+                # log.debug("\n=> center(h : {0}, k : {1}), radius : {2}".format(
+                #     h, k, radius))
 
                 # Calculate the angle
                 # angle = atan2(y2-y1, x2-x1) where (x1,y1) is center and (x2, y2) is point on circle
@@ -242,7 +248,9 @@ class LeastSquaresCircle():
                     angle_rad = (angle_rad + (2*math.pi))
                 else:
                     pass
-                log.debug("\n=> Angle in radians : {0}".format(angle_rad))
+                #log.debug("\n=> Angle in radians : {0}".format(angle_rad))
+                log.debug("(lambda:{0}) => radius : {1}, angle : {2}, center(h : {3}, k : {4})".format(
+                    lambda_value, radius, h, k, angle_rad))
 
                 lambda_list.append(lambda_value)
                 radii_list.append(radius)
@@ -363,11 +371,11 @@ class LeastSquaresCircle():
 
             # create dataframe with the desired for regression modeling
             self._df = pd.DataFrame(list(zip(_freqs, lambda_list, radii_list, phase_list, h_list, k_list, xy_list)),
-                                    columns=['Frequency', 'Lambda', 'Radius', 'Angle', 'x_center', 'y_center', 'xy_coord'])
+                                    columns=['Frequency', 'Lambda', 'Radius', 'Angle', 'x_center', 'y_center', 'coordinates'])
             self._df_list.append(self._df)
-        log.info('-------------------END--------------------------')
         end_time = time.monotonic()
-        log.info(f'Finished in {timedelta(seconds=end_time - start_time)}')
+        log.info(f'Finished in {format_timespan(end_time - start_time)}')
+        log.info('-------------------- END ---------------------------')
 
     def _get_dataframe(self):
         return self._df

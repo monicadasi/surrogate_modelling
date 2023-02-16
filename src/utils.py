@@ -8,11 +8,12 @@ class Utils(metaclass=Singleton):
         pass
 
     def get_dir_path(self) -> str:
-        self._dir_path = os.path.normpath(os.getcwd() + os.sep + os.pardir)
+        #self._dir_path = os.path.normpath(os.getcwd() + os.sep + os.pardir)
+        self._dir_path = r'D:\MasterThesis\surrogate_modelling_repo\data'
         return self._dir_path
 
     def get_data_dir_path(self) -> str:
-        _data_dir = self.get_dir_path() + '\data'
+        _data_dir = self.get_dir_path() + '\orig_data'
         try:
              os.makedirs(_data_dir)
         except FileExistsError:
@@ -46,3 +47,13 @@ class Utils(metaclass=Singleton):
             # model directory already exists
             pass
         return _model_dir
+
+    def get_log_dir_path(self) -> str:
+        _log_dir = self.get_dir_path() + '\\logs'
+        try:
+             os.makedirs(_log_dir)
+        except FileExistsError:
+            # model directory already exists
+            pass
+        return _log_dir
+

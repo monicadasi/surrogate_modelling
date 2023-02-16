@@ -1,2 +1,2 @@
-reset
+clear
 python main.py

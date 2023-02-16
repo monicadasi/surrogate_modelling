@@ -6,10 +6,11 @@ from base_logger import BaseLogger
 from data_visualizer import DataVisualizer
 from least_squares_circle import LeastSquaresCircle
 from data_modeling import DataModeling
-
+from magnitude_plot import MagnitudePlot
 
 def main(log_level):
     BaseLogger(log_level)
+
     _dv = DataVisualizer()
     _dv.plot_frf_data()
     _dv.draw_mag_parameter_plot()
@@ -18,11 +19,13 @@ def main(log_level):
     _lsc = LeastSquaresCircle()
     _lsc.process_circle_extraction()
 
-    _df = _lsc._get_dataframe()
+    #_df = _lsc._get_dataframe()
     _df_list = _lsc._get_df_list()
     _dm = DataModeling(_df_list)
-
     _dm.model_data()
+
+    _final_df = _dm.get_final_df()
+    MagnitudePlot(_final_df)
 
 
 if __name__ == "__main__":

@@ -24,6 +24,11 @@ class DataVisualizer(metaclass=Singleton):
             dataparser.parse_freq_data()
             dataparser.process_data()
             self.frf_df = dataparser.create_data_frame()
+            # # data is parsed and processed when can reuse the created dataframe in the next
+            # # subsequent runs , care should be taken to make the changes in config to
+            # # process the data to "TRUE", if the data has been changed / deleted.
+            # config['parse_data'] = "False"
+            # config['process_data'] = "False"
         else:
             log.info("data is available...fast forwarding...")
             self.frf_df = dataparser.get_freq_data()
