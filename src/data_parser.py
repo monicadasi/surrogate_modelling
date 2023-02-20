@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from utils import Utils
 import logging
+from singleton import Singleton
 
 # fetch the data directory and construct filename
 _data_path = Utils().get_data_dir_path()
@@ -15,7 +16,7 @@ lambda_val = []
 
 log = logging.getLogger(__name__)
 
-class DataParser():
+class DataParser(metaclass=Singleton):
     def parse_freq_data(self):
         # Split the data into small chunks based on a literal '#Parameters' as split criteria
         #log.info("File Path : ", fsplit_path)
@@ -109,7 +110,7 @@ class DataParser():
             '{0}/final_frf_data.txt'.format(_data_path)), sep='\t', index=False)
         return self.frf_df
 
-    def get_freq_data(self):
+    def get_freq_data(self) -> pd.DataFrame:
         f_name = os.path.realpath('{0}/final_frf_data.csv'.format(_data_path))
         if os.path.isfile(f_name):
             self.frf_df = pd.read_csv(f_name)

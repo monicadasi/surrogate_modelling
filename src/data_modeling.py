@@ -33,18 +33,24 @@ class DataModeling():
     def __init__(self, df) -> None:
         self.res_freqs = []
         self._model_dir = utils.Utils().get_models_dir_path()
+        self._plot = utils.Utils()._draw_plots()
         self._df_list = df
-        self.pred_x_list = []
-        self.pred_y_list = []
-        self.pred_mag_list = []
-        self.new_df_list = []
+
+        self.freqncy_list = []
+        self.lambda_list = []
+        #original data attributes
         self.orig_x_list = []
         self.orig_y_list = []
         self.orig_mag_list =[]
-        self.freqncy_list = []
-        self.lambda_list = []
+        #predicted data attributes
+        self.pred_x_list = []
+        self.pred_y_list = []
+        self.pred_mag_list = []
+        #newly created dataframe with original and predicted values
+        self.new_df_list = []
 
     def model_data(self) -> None:
+        log.info('Modeling the data...')
         self.extract_dataframe_info()
 
     def extract_dataframe_info(self):
@@ -76,19 +82,7 @@ class DataModeling():
                                     self.orig_x_list, self.orig_y_list, self.orig_mag_list, 
                                     self.pred_x_list, self.pred_y_list, self.pred_mag_list)),
                                     columns=['Frequency', 'Lambda', 'Org_X', 'Org_Y', 'Org_Mag', 'Pred_X', 'Pred_Y', 'Pred_Mag'])
-            # self.orig_x_list.clear()
-            # self.orig_y_list.clear()
-            # self.orig_mag_list.clear()
-            # self.pred_x_list.clear()
-            # self.pred_y_list.clear()
-            # self.pred_mag_list.clear()
-            # self.freqncy_list.clear()
-            # self.lambda_list.clear()
             self.clear_lists()
-
-            # f_name = '{0}/' + f'data_{self.fq}.csv'
-            # _new_df.to_csv(os.path.realpath(
-            #     f_name.format(utils.Utils().get_results_dir_path())))
             self.new_df_list.append(_new_df)
         #endfor
         end_time = time.monotonic()
@@ -111,7 +105,6 @@ class DataModeling():
         self.freqncy_list.clear()
         self.lambda_list.clear()
 
- 
 # --------------------------------------------------------------------------------------
     """
     Modeling Radius using polynomial regression fit.
@@ -124,14 +117,15 @@ class DataModeling():
         x_train, x_test, y_train, y_test = train_test_split(
             X, y, test_size=0.3, random_state=10)
 
-        rcParams['axes.spines.top'] = False
-        rcParams['axes.spines.right'] = False
+        if self._plot == 'True':
+            rcParams['axes.spines.top'] = False
+            rcParams['axes.spines.right'] = False
 
-        _, ax1 = plt.subplots(1, 1)
+            _, ax1 = plt.subplots(1, 1)
 
-        ax1.scatter(x_test, y_test, c='#edbf6f', label='Testing data')
-        ax1.scatter(x_train, y_train, c='#8acfd4', label='Training data')
-        ax1.legend(loc="upper left")
+            ax1.scatter(x_test, y_test, c='#edbf6f', label='Testing data')
+            ax1.scatter(x_train, y_train, c='#8acfd4', label='Training data')
+            ax1.legend(loc="upper left")
 
         x_train = x_train.reshape(-1, 1)
         y_train = y_train.reshape(-1, 1)
@@ -149,15 +143,16 @@ class DataModeling():
         y_pred = self.reg_radius.predict(xtest_poly)
 
         log.debug(f'Model Score (Radius) : {res.score(x_poly, y_train)}')
-        ax1.set_title('Regression w.r.t Radius')
-        ax1.set_xlabel('Lambda')
-        ax1.set_ylabel('Radius')
-        ax1.plot(x_train, self.reg_radius.predict(x_poly),
-                 c='blue', label='Predicted Line')
-        ax1.legend(loc="best")
-        f_name = '{0}/' + f'Radius[Model]_{self.fq}.png'
-        plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
-        plt.close()
+        if self._plot == 'True':
+            ax1.set_title('Regression w.r.t Radius')
+            ax1.set_xlabel('Lambda')
+            ax1.set_ylabel('Radius')
+            ax1.plot(x_train, self.reg_radius.predict(x_poly),
+                    c='blue', label='Predicted Line')
+            ax1.legend(loc="best")
+            f_name = '{0}/' + f'Radius[Model]_{self.fq}.png'
+            plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
+            plt.close()
 
 
 #---------------------------------------------------------------------------
@@ -179,15 +174,16 @@ class DataModeling():
 
         x_train, x_test, y_train, y_test = train_test_split(
             X, y, test_size=0.3, random_state=10)
+        
+        if self._plot == 'True':
+            rcParams['axes.spines.top'] = False
+            rcParams['axes.spines.right'] = False
 
-        rcParams['axes.spines.top'] = False
-        rcParams['axes.spines.right'] = False
+            _, ax2 = plt.subplots(1, 1)
 
-        _, ax2 = plt.subplots(1, 1)
-
-        ax2.scatter(x_test, y_test, c='#edbf6f', label='Testing data')
-        ax2.scatter(x_train, y_train, c='#8acfd4', label='Training data')
-        ax2.legend(loc="upper left")
+            ax2.scatter(x_test, y_test, c='#edbf6f', label='Testing data')
+            ax2.scatter(x_train, y_train, c='#8acfd4', label='Training data')
+            ax2.legend(loc="upper left")
 
         x_train = x_train.reshape(-1, 1)
         y_train = y_train.reshape(-1, 1)
@@ -205,17 +201,17 @@ class DataModeling():
         # pred_ph_deg = math.degrees(Ph)
         # v2  = np.rad2deg(Ph)
         # print('predicted angle in degrees : {}, {}'.format(pred_ph_deg, v2))
+        if self._plot == 'True':
+            ax2.set_title('Regression w.r.t Angle')
+            ax2.set_xlabel('Lambda')
+            ax2.set_ylabel('Angle')
+            ax2.plot(x_train, self.reg_phase.predict(x_poly),
+                    c='blue', label='Predicted Line')
+            ax2.legend(loc="upper right")
 
-        ax2.set_title('Regression w.r.t Angle')
-        ax2.set_xlabel('Lambda')
-        ax2.set_ylabel('Angle')
-        ax2.plot(x_train, self.reg_phase.predict(x_poly),
-                 c='blue', label='Predicted Line')
-        ax2.legend(loc="upper right")
-
-        f_name = '{0}/' + f'Phase[Model]_{self.fq}.png'
-        plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
-        plt.close()
+            f_name = '{0}/' + f'Phase[Model]_{self.fq}.png'
+            plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
+            plt.close()
 
 #---------------------------------------------------------------------------
     def predict_phase(self, lambda_val):
@@ -236,16 +232,16 @@ class DataModeling():
 
         x_train, x_test, y_train, y_test = train_test_split(
             X, y, test_size=0.3, random_state=10)
+        
+        if self._plot == 'True':
+            rcParams['axes.spines.top'] = False
+            rcParams['axes.spines.right'] = False
 
-        rcParams['axes.spines.top'] = False
-        rcParams['axes.spines.right'] = False
+            _, ax3 = plt.subplots(1, 1)
 
-        _, ax3 = plt.subplots(1, 1)
-
-        ax3.scatter(x_test, y_test, c='#edbf6f', label='Testing data')
-        ax3.scatter(x_train, y_train, c='#8acfd4', label='Training data')
-        ax3.legend(loc="upper left")
-        # plt.show()
+            ax3.scatter(x_test, y_test, c='#edbf6f', label='Testing data')
+            ax3.scatter(x_train, y_train, c='#8acfd4', label='Training data')
+            ax3.legend(loc="upper left")
 
         x_train = x_train.reshape(-1, 1)
         y_train = y_train.reshape(-1, 1)
@@ -260,16 +256,17 @@ class DataModeling():
         res = self.reg_xc.fit(x_poly, y_train)
 
         log.debug(f'Model Score (X-Center) : {res.score(x_poly, y_train)}')
-        ax3.set_title('Regression w.r.t X_Center')
-        ax3.set_xlabel('Lambda')
-        ax3.set_ylabel('X_Center')
-        ax3.plot(x_train, self.reg_xc.predict(x_poly),
-                 c='blue', label='Predicted Line')
-        ax3.legend(loc="upper right")
+        if self._plot == 'True':
+            ax3.set_title('Regression w.r.t X_Center')
+            ax3.set_xlabel('Lambda')
+            ax3.set_ylabel('X_Center')
+            ax3.plot(x_train, self.reg_xc.predict(x_poly),
+                    c='blue', label='Predicted Line')
+            ax3.legend(loc="upper right")
 
-        f_name = '{0}/' + f'X-Coordinate[Model]_{self.fq}.png'
-        plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
-        plt.close()
+            f_name = '{0}/' + f'X-Coordinate[Model]_{self.fq}.png'
+            plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
+            plt.close()
 
 
 #---------------------------------------------------------------------------
@@ -282,7 +279,7 @@ class DataModeling():
 
 # --------------------------------------------------------------------------------------
     """
-    Modeling Y- Center using polynomial regression fit.
+    Modeling Y-Center using polynomial regression fit.
     """
 
     def model_ycenter(self, lmbda, y_center) -> None:
@@ -291,15 +288,15 @@ class DataModeling():
 
         x_train, x_test, y_train, y_test = train_test_split(
             X, y, test_size=0.3, random_state=10)
+        if self._plot == 'True':
+            rcParams['axes.spines.top'] = False
+            rcParams['axes.spines.right'] = False
 
-        rcParams['axes.spines.top'] = False
-        rcParams['axes.spines.right'] = False
+            _, ax4 = plt.subplots(1, 1)
 
-        _, ax4 = plt.subplots(1, 1)
-
-        ax4.scatter(x_test, y_test, c='#edbf6f', label='Testing data')
-        ax4.scatter(x_train, y_train, c='#8acfd4', label='Training data')
-        ax4.legend(loc="upper left")
+            ax4.scatter(x_test, y_test, c='#edbf6f', label='Testing data')
+            ax4.scatter(x_train, y_train, c='#8acfd4', label='Training data')
+            ax4.legend(loc="upper left")
 
         x_train = x_train.reshape(-1, 1)
         y_train = y_train.reshape(-1, 1)
@@ -314,16 +311,17 @@ class DataModeling():
         res = self.reg_yc.fit(x_poly, y_train)
 
         log.debug(f'Model Score (Y-Center) :  {res.score(x_poly, y_train)}')
-        ax4.set_title('Regression w.r.t y_center')
-        ax4.set_xlabel('Lambda')
-        ax4.set_ylabel('Y_Center')
-        ax4.plot(x_train, self.reg_yc.predict(x_poly),
-                 c='blue', label='Predicted Line')
-        ax4.legend(loc="upper left")
+        if self._plot == 'True':
+            ax4.set_title('Regression w.r.t y_center')
+            ax4.set_xlabel('Lambda')
+            ax4.set_ylabel('Y_Center')
+            ax4.plot(x_train, self.reg_yc.predict(x_poly),
+                    c='blue', label='Predicted Line')
+            ax4.legend(loc="upper left")
 
-        f_name = '{0}/' + f'Y-coordinate[Model]_{self.fq}.png'
-        plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
-        plt.close()
+            f_name = '{0}/' + f'Y-coordinate[Model]_{self.fq}.png'
+            plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
+            plt.close()
 
 #---------------------------------------------------------------------------
     def predict_Yc(self, lambda_val):
@@ -358,7 +356,7 @@ class DataModeling():
             log.error("Please check the coordinates extraction")
 
         log.info(f'Predicted Coordinate : ({X_coord}, {Y_coord})')
-        print('-------------------------------------------------------')
+        logging.info('-------------------------------------------------------')
         self.pred_x_list.append(X_coord)
         self.pred_y_list.append(Y_coord)
         cn = complex(X_coord, Y_coord)

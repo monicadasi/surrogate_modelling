@@ -1,14 +1,12 @@
 import os
 import random
-import utils
-import json
 import logging
 import plotly.graph_objects as go
 
 from pathlib import Path
-from data_parser import DataParser
 from singleton import Singleton
 from utils import Utils
+from data_parser import DataParser
 
 log = logging.getLogger(__name__)
 
@@ -16,25 +14,10 @@ class DataVisualizer(metaclass=Singleton):
 
     def __init__(self):
         self._res_path = Utils().get_results_dir_path()
-        dataparser = DataParser()
-        with open('config.json', 'r') as f:
-            config = json.load(f)
-        if config['parse_data'] == "True":
-            log.info("Processing the frequency data ...")
-            dataparser.parse_freq_data()
-            dataparser.process_data()
-            self.frf_df = dataparser.create_data_frame()
-            # # data is parsed and processed when can reuse the created dataframe in the next
-            # # subsequent runs , care should be taken to make the changes in config to
-            # # process the data to "TRUE", if the data has been changed / deleted.
-            # config['parse_data'] = "False"
-            # config['process_data'] = "False"
-        else:
-            log.info("data is available...fast forwarding...")
-            self.frf_df = dataparser.get_freq_data()
+        self.frf_df = DataParser().get_freq_data()
 
-    def get_freq_dataframe(self):
-        return self.frf_df
+    # def get_freq_dataframe(self):
+    #     return self.frf_df
 
     def plot_frf_data(self):
         plt_name = os.path.realpath(
