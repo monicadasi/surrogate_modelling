@@ -1,2 +1,2 @@
 clear
-python main.py
+python main.py -dp False
