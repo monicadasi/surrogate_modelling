@@ -41,6 +41,7 @@ def parse_freq_data():
     else:
         log.info("data is available...fast forwarding...")
 
+
 def visualize_data():
     # draw the plot only the config value to draw is TRUE
     if Utils()._draw_plots() == 'True':
@@ -49,6 +50,7 @@ def visualize_data():
         _dv.draw_mag_parameter_plot()
         _dv.draw_polar_plot()
 
+
 def create_model_predict():
     _lsc = LeastSquaresCircle()
     _lsc.process_circle_extraction()
@@ -56,9 +58,12 @@ def create_model_predict():
     _df_list = _lsc._get_df_list()
     _dm = DataModeling(_df_list)
     _dm.model_data()
-    if Utils()._draw_plots() == 'True':
-        _final_df = _dm.get_final_df()
-        MagnitudePlot(_final_df)
+    _final_df = _dm.get_final_df()
+    MagnitudePlot(_final_df)
+    # if Utils()._draw_plots() == 'True':
+    #     _final_df = _dm.get_final_df()
+    #     MagnitudePlot(_final_df)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

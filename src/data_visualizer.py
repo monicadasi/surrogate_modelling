@@ -36,11 +36,9 @@ class DataVisualizer(metaclass=Singleton):
 
             # extract the 'Lambda'values from dataframe
             lm_lst = frf_df2.apply(lambda row: row['Lambda'], axis=1).tolist()
-            # log.info(type(lm_lst))
 
             # remove the duplicate values from the list
             lm_lst = list(dict.fromkeys(lm_lst))
-            # log.info(len(lm_lst))
 
             for b in lm_lst:
                 if not frf_df2.empty:
@@ -77,7 +75,7 @@ class DataVisualizer(metaclass=Singleton):
         plt_name = os.path.realpath(
             '{0}/lambda_mag_plot.html'.format(self._res_path))
         if Path(plt_name).is_file():
-            log.info("Magnitude Vs S-Paramater Plot exists, skipping...")
+            log.info("Magnitude Vs S-Paramater plot exists, skipping...")
         else:
             log.info("Plotting Magnitude Vs S-Parameter...")
             # set the graph template in plotly
@@ -88,25 +86,20 @@ class DataVisualizer(metaclass=Singleton):
             fq_lst = frf_df1.apply(
                 lambda row: row['Frequency'], axis=1).tolist()
 
-            # log.info(type(fq_lst))
-            # log.info(len(fq_lst))
-
             # remove the duplicate values from the list
             # this is done to extract the values of lambda and magnitude at a given frequency
             fq_lst = list(dict.fromkeys(fq_lst))
-            # log.info(len(fq_lst))
-
             # Create traces
             fig = go.Figure()
 
-            for a in range(25):
-                b = random.choice(fq_lst)
+            for i in range(25):
+                f = random.choice(fq_lst)
                 if not frf_df1.empty:
-                    rslt_frf_df = frf_df1[frf_df1['Frequency'].isin([b])]
+                    rslt_frf_df = frf_df1[frf_df1['Frequency'].isin([f])]
 
                     x_val = rslt_frf_df['Lambda'].to_list()
                     y_val = rslt_frf_df['Magnitude'].to_list()
-                    fq_name = f'Frequency = {b}'
+                    fq_name = f'Frequency = {f}'
 
                     # Add the x and y values to trace
                     fig.add_trace(go.Scatter(x=x_val, y=y_val,

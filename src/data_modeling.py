@@ -6,15 +6,10 @@ import pandas as pd
 import numpy as np
 
 import time
-#from datetime import timedelta
 from humanfriendly import format_timespan
-
-#import matplotlib
-# matplotlib.use('GTK3Agg')
-
 import matplotlib.pyplot as plt
-
 from matplotlib import rcParams
+from plot_prediction import PlotPrediction
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
@@ -81,7 +76,7 @@ class DataModeling():
             _new_df = pd.DataFrame(list(zip(self.freqncy_list, self.lambda_list, 
                                     self.orig_x_list, self.orig_y_list, self.orig_mag_list, 
                                     self.pred_x_list, self.pred_y_list, self.pred_mag_list)),
-                                    columns=['Frequency', 'Lambda', 'Org_X', 'Org_Y', 'Org_Mag', 'Pred_X', 'Pred_Y', 'Pred_Mag'])
+                                    columns=['Frequency', 'Lambda', 'Org_X', 'Org_Y', 'Org_Mag', 'Pred_X', 'Pred_Y', 'Pred_Mag'])           
             self.clear_lists()
             self.new_df_list.append(_new_df)
         #endfor
@@ -92,8 +87,9 @@ class DataModeling():
         self.final_df = self.final_df.sort_values(['Lambda', 'Frequency'], ascending = [True, True])
         self.final_df.reset_index(drop=True, inplace=True)
         df_name = '{0}/' + f'final_df.csv'
-        self.final_df.to_csv(os.path.realpath(
-                df_name.format(utils.Utils().get_results_dir_path())))
+        self.final_df.to_csv(os.path.realpath(df_name.format(utils.Utils().get_results_dir_path())))
+        #Plot the True value and Predicted Magnitude values w.r.t frequency as function of lambda
+        PlotPrediction(self.final_df)
 
     def clear_lists(self) -> None:
         self.orig_x_list.clear()

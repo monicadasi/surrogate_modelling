@@ -7,7 +7,7 @@ import time
 from humanfriendly import format_timespan
 
 import matplotlib
-#matplotlib.use('GTK3Agg') 
+# matplotlib.use('GTK3Agg')
 
 import numpy as np
 import pandas as pd
@@ -25,6 +25,8 @@ log = logging.getLogger(__name__)
 Circle approximation using Least Squares Method.
 Ref: https://scipy-cookbook.readthedocs.io/items/Least_Squares_Circle.html
 """
+
+
 class LeastSquaresCircle():
     def __init__(self) -> None:
         self._plt_dir = Utils().get_plots_dir_path()
@@ -126,7 +128,7 @@ class LeastSquaresCircle():
         # create a copy of the dataset
         frf_df_cp = DataParser().get_freq_data()
         frf_df6 = frf_df_cp.copy(deep=True)
-        # frf_df6 = frf_df6.sort_values('Lambda')
+
         # Pick the each row of these columns containing frequency, lambda, S1 real, S1 imaginary
         # and form a list of each row containing these column values.
         self.orgDF_list = frf_df6.apply(lambda row:
@@ -141,7 +143,7 @@ class LeastSquaresCircle():
 
         # pick a random frequency from the data , 'n' denotes : number of samples to be picked
         # In this case we just pick one frequency and create a model for that.
-        df_elements = frf_df6.sample(n=3)
+        df_elements = frf_df6.sample(n=2)
         # # contains the row of the picked frequency
         # log.info(f'<--------- Randomly Picked Row --------->\n{df_elements}')
 
@@ -152,20 +154,22 @@ class LeastSquaresCircle():
 
         # extract the freq. to a list
         frq_list = df_elements['Frequency'].to_list()
-        #frq_list = frf_df6['Frequency'].to_list()
-        _frqs = list(dict.fromkeys(frq_list)) # remove the duplicate freq.
-        #log.info(f'Frequency List Size : {len(_frqs)}')
+
+        # frq_list = frf_df6['Frequency'].to_list()
+        _frqs = list(dict.fromkeys(frq_list))  # remove the duplicate freq.
+        # log.info(f'Frequency List Size : {len(_frqs)}')
 
         log.info(f'Frequency List Size : {len(_frqs)}')
         for i, frq in enumerate(_frqs, start=1):
             # extracted frequency.
-            log.info('Picked Frequency : {0} , Processing freq. {1}'.format(frq, i))
+            log.info(
+                'Picked Frequency : {0} , Processing freq. {1}'.format(frq, i))
             # For the picked frequency extract all the matching rows
             if not frf_df6.empty:
                 result_df = frf_df6[frf_df6['Frequency'].isin([frq])]
                 result_df.to_csv(os.path.realpath(
                     '{0}/extracted_frequency_df.csv'.format(Utils().get_data_dir_path())))
-                #result_df.to_csv('extracted_frequency_df.csv')
+                # result_df.to_csv('extracted_frequency_df.csv')
             else:
                 log.info('Dataframe is empty,cannot continue...!!')
 
@@ -177,15 +181,15 @@ class LeastSquaresCircle():
                                        + [row['S1_Imaginary[Im]']], axis=1).to_dict()
 
             # contains the indexes of the picked frequency along with the other information
-            #log.info(f'Length of working dataframe : {len(wrk_dict)}')
+            # log.info(f'Length of working dataframe : {len(wrk_dict)}')
 
             # ----------------------------------------------------------------------------------------------------------------
             """
             - For each 'lambda' value in the working dataframe, we pick the index and 
-            extract the adjacent data points for the picked index, which inturn contains 
-            the adjacent frequencies data.
+              extract the adjacent data points for the picked index, which inturn contains 
+              the adjacent frequencies data.
             - Pass the extracted real and imaginarly values as tuple to plot the circle 
-            which passes through these 3 points.
+              which passes through these 3 points.
             - With circle plot we also have circle 'Radius' and 'Center' information.
             """
             # ----------------------------------------------------------------------------------------------------------------
@@ -251,7 +255,7 @@ class LeastSquaresCircle():
                     angle_rad = (angle_rad + (2*math.pi))
                 else:
                     pass
-                #log.debug("\n=> Angle in radians : {0}".format(angle_rad))
+                # log.debug("\n=> Angle in radians : {0}".format(angle_rad))
                 log.debug("(lambda:{0}) => radius : {1}, angle : {2}, center(h : {3}, k : {4})".format(
                     lambda_value, radius, h, k, angle_rad))
 
@@ -270,8 +274,8 @@ class LeastSquaresCircle():
 
                     # Scatter plot
                     fig.add_trace(go.Scatter(x=[lambda_value], y=[radius],
-                                            mode='markers',
-                                            name=f'{lambda_name} , radius = {radius}'))
+                                             mode='markers',
+                                             name=f'{lambda_name} , radius = {radius}'))
 
                     fig1.add_trace(go.Scatter(
                         x=[lambda_value],
@@ -290,29 +294,31 @@ class LeastSquaresCircle():
                         y=[k],
                         mode='markers',
                         name=f'{lambda_name} , k = {k}'))
-            #endfor
+            # endfor
             if self._plot == 'True':
                 # Line plots
                 fig.add_trace(go.Scatter(
                     x=lambda_list, y=radii_list, mode='lines'))
                 fig1.add_trace(go.Scatter(
                     x=lambda_list, y=phase_list, mode='lines'))
-                fig2.add_trace(go.Scatter(x=lambda_list, y=h_list, mode='lines'))
-                fig3.add_trace(go.Scatter(x=lambda_list, y=k_list, mode='lines'))
+                fig2.add_trace(go.Scatter(
+                    x=lambda_list, y=h_list, mode='lines'))
+                fig3.add_trace(go.Scatter(
+                    x=lambda_list, y=k_list, mode='lines'))
 
                 # Set figure size
                 fig.update_layout(title=f'Radius vs Lambda (Frequency = {frq})',
-                                xaxis=dict(
-                                    range=[7, 11],
-                                    tickmode='linear',
-                                    dtick=0.5),
-                                yaxis=dict(
-                                    range=[0.3, 1.0],
-                                    tickmode='linear',
-                                    dtick=0.1),
-                                template=large_rockwell_template,
-                                width=1000, height=600,
-                                showlegend=True)
+                                  xaxis=dict(
+                                      range=[7, 11],
+                                      tickmode='linear',
+                                      dtick=0.5),
+                                  yaxis=dict(
+                                      range=[0.3, 1.0],
+                                      tickmode='linear',
+                                      dtick=0.1),
+                                  template=large_rockwell_template,
+                                  width=1000, height=600,
+                                  showlegend=True)
 
                 # Change grid color and x and y axis colors
                 fig.update_xaxes(gridcolor='black', griddash='dot')
@@ -322,68 +328,69 @@ class LeastSquaresCircle():
                 plt = '{0}/' + f'Radius_Vs_Lambda_{frq}.png'
                 f_name = os.path.realpath(plt.format(self._plt_dir))
                 # fig.write_html(f_name)
-                fig.write_image(f_name, engine="orca", format="png", width=800, height=400)
+                fig.write_image(f_name, engine="orca",
+                                format="png", width=800, height=400)
 
                 # -----------------------------------------------------------------------------
                 # Set figure1 size
                 fig1.update_layout(title=f'Phase vs Lambda (Frequency = {frq})',
-                                template=large_rockwell_template,
-                                showlegend=True)
+                                   template=large_rockwell_template,
+                                   showlegend=True)
                 fig1.update_xaxes(gridcolor='black', griddash='dot')
                 fig1.update_yaxes(gridcolor='black', griddash='dot')
                 # plt1 = '{0}/'+ f'Phase_Vs_Lambda_{frq}.html'
                 plt1 = '{0}/' + f'Phase_Vs_Lambda_{frq}.png'
                 # fig1.write_html(os.path.realpath(plt1.format(self._plt_dir)))
                 f1_name = os.path.realpath(plt1.format(self._plt_dir))
-                fig.write_image(f1_name, engine="orca", format="png", width=800, height=400)
+                fig.write_image(f1_name, engine="orca",
+                                format="png", width=800, height=400)
 
                 # -----------------------------------------------------------------------------
                 # Set figure2 size
                 fig2.update_layout(title=f'X-coord vs Lambda (Frequency = {frq})',
-                                xaxis=dict(
-                                    range=[7, 11],
-                                    tickmode='linear',
-                                    dtick=1.0),
-                                yaxis=dict(
-                                    range=[0.3, 0.6],
-                                    tickmode='linear',
-                                    dtick=0.1),
-                                template=large_rockwell_template,
-                                showlegend=True)
+                                   xaxis=dict(
+                                       range=[7, 11],
+                                       tickmode='linear',
+                                       dtick=1.0),
+                                   yaxis=dict(
+                                       range=[0.3, 0.6],
+                                       tickmode='linear',
+                                       dtick=0.1),
+                                   template=large_rockwell_template,
+                                   showlegend=True)
                 fig2.update_xaxes(gridcolor='black', griddash='dot')
                 fig2.update_yaxes(gridcolor='black', griddash='dot')
                 plt2 = '{0}/' + f'X-Coord_Vs_Lambda_{frq}.png'
                 f2_name = os.path.realpath(plt2.format(self._plt_dir))
-                fig2.write_image(f2_name, engine="orca", format="png", width=800, height=400)
+                fig2.write_image(f2_name, engine="orca",
+                                 format="png", width=800, height=400)
 
                 # -----------------------------------------------------------------------------
                 # Set figure size
                 fig3.update_layout(title=f'y-coord vs Lambda (Frequency = {frq})',
-                                xaxis=dict(
-                                    range=[7, 11],
-                                    tickmode='linear',
-                                    dtick=1.0),
-                                yaxis=dict(
-                                    range=[-0.4, -0.1],
-                                    tickmode='linear',
-                                    dtick=0.1),
-                                template=large_rockwell_template,
-                                showlegend=True)
+                                   xaxis=dict(
+                                       range=[7, 11],
+                                       tickmode='linear',
+                                       dtick=1.0),
+                                   yaxis=dict(
+                                       range=[-0.4, -0.1],
+                                       tickmode='linear',
+                                       dtick=0.1),
+                                   template=large_rockwell_template,
+                                   showlegend=True)
                 fig3.update_xaxes(gridcolor='black', griddash='dot')
                 fig3.update_yaxes(gridcolor='black', griddash='dot')
                 plt3 = '{0}/' + f'Y-Coord_Vs_Lambda_{frq}.png'
-                fig3.write_image(os.path.realpath(plt3.format(self._plt_dir)), engine="orca", format="png", width=800, height=400)
-            log.info('DONE -> Creating the dataframe with all necessary attributes')
+                fig3.write_image(os.path.realpath(plt3.format(
+                    self._plt_dir)), engine="orca", format="png", width=800, height=400)
             # create dataframe with the desired attributes for regression modeling
-            self._df = pd.DataFrame(list(zip(_freqs, lambda_list, radii_list, phase_list, h_list, k_list, xy_list)),
+            _df = pd.DataFrame(list(zip(_freqs, lambda_list, radii_list, phase_list, h_list, k_list, xy_list)),
                                     columns=['Frequency', 'Lambda', 'Radius', 'Angle', 'x_center', 'y_center', 'coordinates'])
-            self._df_list.append(self._df)
+            self._df_list.append(_df)
         end_time = time.monotonic()
         log.info(f'Finished in {format_timespan(end_time - start_time)}')
         log.info('-------------------- END ---------------------------')
 
-    def _get_dataframe(self):
-        return self._df
 
     def _get_df_list(self):
         log.debug(f'LeastSquareCircle(): _get_df_list = {len(self._df_list)}')
