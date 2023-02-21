@@ -335,8 +335,9 @@ class DataModeling():
         # for now the list size is 1
         #_df = self._df_list[-1]
         _dframe = _df[_df.Lambda == l_val]
-        log.info(f'Original Data : \n {_dframe}')
         org_crd = _dframe['coordinates'].to_list()
+        log.info('Freq: {0} , Lambda: {1}'.format(_dframe.iloc[0]['Frequency'], _dframe.iloc[0]['Lambda'])) #.iloc[0]['A']
+        log.info(f'\tTrue Coordinate : {org_crd[-1]}')
         self.freqncy_list.append(self.fq)
         self.lambda_list.append(l_val)
         if len(org_crd) == LIST_SIZE:

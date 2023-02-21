@@ -143,7 +143,7 @@ class LeastSquaresCircle():
 
         # pick a random frequency from the data , 'n' denotes : number of samples to be picked
         # In this case we just pick one frequency and create a model for that.
-        df_elements = frf_df6.sample(n=2)
+        #df_elements = frf_df6.sample(n=100)
         # # contains the row of the picked frequency
         # log.info(f'<--------- Randomly Picked Row --------->\n{df_elements}')
 
@@ -153,9 +153,9 @@ class LeastSquaresCircle():
         # ----------------------------------------------------------------------------------------------------------------
 
         # extract the freq. to a list
-        frq_list = df_elements['Frequency'].to_list()
+        #frq_list = df_elements['Frequency'].to_list()
 
-        # frq_list = frf_df6['Frequency'].to_list()
+        frq_list = frf_df6['Frequency'].to_list()
         _frqs = list(dict.fromkeys(frq_list))  # remove the duplicate freq.
         # log.info(f'Frequency List Size : {len(_frqs)}')
 
