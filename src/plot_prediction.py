@@ -19,7 +19,7 @@ class PlotPrediction:
             layout=go.Layout(title_font=dict(family="Rockwell", size=24)))
 
         frf_df3 = self._final_df.copy(deep=True)
-        df_elements = frf_df3.sample(n=3)
+        df_elements = frf_df3.sample(n=10)
 
         picked_lm = df_elements['Lambda'].to_list()
         _res_df = frf_df3[frf_df3['Lambda'].isin(picked_lm)]
