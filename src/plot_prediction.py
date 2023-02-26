@@ -38,7 +38,7 @@ class PlotPrediction:
             y_val_1 = rslt_frf_df['Org_Mag'].to_list()
             y_val_2 = rslt_frf_df['Pred_Mag'].to_list()
             fig.add_trace(go.Scatter(
-                x=x_val_1, y=y_val_1, name=f' OrgL = {v}'))
+                x=x_val_1, y=y_val_1, name=f' TrueL = {v}'))
             fig.add_trace(go.Scatter(x=x_val_1, y=y_val_2, name=f'PredL= {v}'))
 
         # set the graph template in plotly
@@ -57,6 +57,6 @@ class PlotPrediction:
         fig.update_xaxes(gridcolor='black', griddash='dot')
         fig.update_yaxes(gridcolor='black', griddash='dot')
         fig.update_traces(line=dict(width=1))
-        _name = '{0}/' + f'true_pred_MagPlot.html'
+        _name = '{0}/' + f'true_pred_MagnitudePlot.html'
         fig.write_html(os.path.realpath(
             _name.format(Utils().get_results_dir_path())))

@@ -10,6 +10,7 @@ from data_parser import DataParser
 
 log = logging.getLogger(__name__)
 
+
 class DataVisualizer(metaclass=Singleton):
 
     def __init__(self):

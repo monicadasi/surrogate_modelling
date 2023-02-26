@@ -1,3 +1,4 @@
+import itertools
 import os
 import utils
 import math
@@ -13,6 +14,9 @@ from plot_prediction import PlotPrediction
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
+
+import random
+random.seed(100)
 
 RADIUS = 'Radius'
 ANGLE = 'Angle'
@@ -46,8 +50,40 @@ class DataModeling():
 
     def model_data(self) -> None:
         log.info('Modeling the data...')
-        self.extract_dataframe_info()
+        #self.extract_dataframe_info()
+        wrking_lmda_list = self.extract_fewer_samples()
+        self.extract_df_info_fewer_samples(wrking_lmda_list)
 
+    def extract_fewer_samples(self):
+        """
+        1. Pick fewer lambda sample from the dataframe for eg. 10 values
+        in between 7-8 so on until 11. At the moment the lambda samples
+        are 50 between 7-8. Train the model with these fewer samples
+        and interpolate the data for other lambda values.
+        """
+        # _wrking_df = self._df_list[:]
+        _wrking_df = pd.concat(self._df_list)
+        _wrking_df = _wrking_df.sort_values(['Lambda', 'Frequency'], ascending = [True, True])
+        _wrking_df.reset_index(drop=True, inplace=True)
+        lmda_lst = _wrking_df.apply(lambda row: row['Lambda'], axis=1).tolist()
+
+        # remove the duplicate lambda values from the list
+        lmda_lst = list(dict.fromkeys(lmda_lst))
+        lmda_lst_cp = lmda_lst[:]
+        lmbda_sublists = []
+
+        for i in range(0, 4):
+            lmda_lst_cp.sort()
+            sub_list = lmda_lst_cp[:50]
+            sub_list.sort()
+            lmda_lst_cp = list(set(lmda_lst_cp)-set(sub_list))
+            sub_list = sub_list[0:len(sub_list)-1:3] # 17 elements would be picked
+            lmbda_sublists.append(sub_list)    
+        #merge all sublist into one , flatten the list of list into one
+        merged_list = list(itertools.chain(*lmbda_sublists))
+        return merged_list
+
+#---------------------------------------------------------------------------------------
     def extract_dataframe_info(self):
         start_time = time.monotonic()
         for _df in self._df_list:
@@ -73,10 +109,11 @@ class DataModeling():
                 self.extract_predicted_xy_coord(l_val, res_df)
             # create dataframe with the desired for regression modeling
 
-            _new_df = pd.DataFrame(list(zip(self.freqncy_list, self.lambda_list, 
-                                    self.orig_x_list, self.orig_y_list, self.orig_mag_list, 
-                                    self.pred_x_list, self.pred_y_list, self.pred_mag_list)),
-                                    columns=['Frequency', 'Lambda', 'Org_X', 'Org_Y', 'Org_Mag', 'Pred_X', 'Pred_Y', 'Pred_Mag'])           
+            _new_df = pd.DataFrame(list(zip(
+                self.freqncy_list, self.lambda_list, 
+                self.orig_x_list, self.orig_y_list, self.orig_mag_list, 
+                self.pred_x_list, self.pred_y_list, self.pred_mag_list)),
+                columns=['Frequency', 'Lambda', 'Org_X', 'Org_Y', 'Org_Mag', 'Pred_X', 'Pred_Y', 'Pred_Mag'])           
             self.clear_lists()
             self.new_df_list.append(_new_df)
         #endfor
@@ -90,6 +127,56 @@ class DataModeling():
         self.final_df.to_csv(os.path.realpath(df_name.format(utils.Utils().get_results_dir_path())))
         #Plot the True value and Predicted Magnitude values w.r.t frequency as function of lambda
         PlotPrediction(self.final_df)
+#-------------------------------------------------------------------------------------------
+
+    def extract_df_info_fewer_samples(self, _lambda_list):
+        start_time = time.monotonic()
+        for _df in self._df_list:
+            fq_list = _df['Frequency'].to_list()
+            _fq = list(dict.fromkeys(fq_list))
+
+            self.fq = _fq[-1]
+            res_df = _df[_df['Frequency'].isin([self.fq])]
+            # use the res_df to extract the fewer lambda samples
+            _wrking_df = res_df[res_df['Lambda'].isin(_lambda_list)]
+
+            lambda_vals = _wrking_df['Lambda'] #length here is 68
+            org_lambda_list = res_df['Lambda'] #length here is 200
+            # training is done on the fewer lambda samples
+            self.model_radius(lambda_vals, _wrking_df[RADIUS])
+            self.model_phase(lambda_vals, _wrking_df[ANGLE])
+            self.model_xcenter(lambda_vals, _wrking_df[X_CENTER])
+            self.model_ycenter(lambda_vals, _wrking_df[Y_CENTER])
+
+            # models are prepared.. it's time for some predictions ;)
+            log.info(f'Predictions for the frequency {self.fq} is,')
+            for l_val in org_lambda_list: # predict for all the lambda values
+                self.predict_radius(l_val)
+                self.predict_phase(l_val)
+                self.predict_Xc(l_val)
+                self.predict_Yc(l_val)
+                self.extract_predicted_xy_coord(l_val, res_df)
+            # create dataframe with the desired for regression modeling
+
+            _new_df = pd.DataFrame(list(zip(
+                self.freqncy_list, self.lambda_list, 
+                self.orig_x_list, self.orig_y_list, self.orig_mag_list, 
+                self.pred_x_list, self.pred_y_list, self.pred_mag_list)),
+                columns=['Frequency', 'Lambda', 'Org_X', 'Org_Y', 'Org_Mag', 'Pred_X', 'Pred_Y', 'Pred_Mag'])           
+            self.clear_lists()
+            self.new_df_list.append(_new_df)
+        #endfor
+        end_time = time.monotonic()
+        log.info(f'Predictions finished in {format_timespan(end_time - start_time)}')
+        # concat the dataframes in the list and create a single dataframe with the final data for further plotting
+        self.final_df = pd.concat(self.new_df_list)
+        self.final_df = self.final_df.sort_values(['Lambda', 'Frequency'], ascending = [True, True])
+        self.final_df.reset_index(drop=True, inplace=True)
+        df_name = '{0}/' + f'final_df.csv'
+        self.final_df.to_csv(os.path.realpath(df_name.format(utils.Utils().get_results_dir_path())))
+        #Plot the True value and Predicted Magnitude values w.r.t frequency as function of lambda
+        PlotPrediction(self.final_df)
+#----------------------------------------------------------------------------------------------
 
     def clear_lists(self) -> None:
         self.orig_x_list.clear()
@@ -111,7 +198,7 @@ class DataModeling():
         y = np.array(radii)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.3, random_state=10)
+            X, y, test_size=0.2, random_state=10)
 
         if self._plot == 'True':
             rcParams['axes.spines.top'] = False
@@ -169,7 +256,7 @@ class DataModeling():
         y = np.array(angle)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.3, random_state=10)
+            X, y, test_size=0.2, random_state=10)
         
         if self._plot == 'True':
             rcParams['axes.spines.top'] = False
@@ -227,7 +314,7 @@ class DataModeling():
         y = np.array(x_center)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.3, random_state=10)
+            X, y, test_size=0.2, random_state=10)
         
         if self._plot == 'True':
             rcParams['axes.spines.top'] = False
@@ -283,7 +370,7 @@ class DataModeling():
         y = np.array(y_center)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.3, random_state=10)
+            X, y, test_size=0.2, random_state=10)
         if self._plot == 'True':
             rcParams['axes.spines.top'] = False
             rcParams['axes.spines.right'] = False

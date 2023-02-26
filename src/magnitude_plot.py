@@ -11,7 +11,7 @@ class MagnitudePlot:
 
     def _plot(self):
         plt_name = os.path.realpath(
-            '{0}/pred_freq_plot.html'.format(self._res_path))
+            '{0}/predicted_freq_plot.html'.format(self._res_path))
         large_rockwell_template = dict(
             layout=go.Layout(title_font=dict(family="Rockwell", size=24)))
         # Create traces

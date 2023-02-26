@@ -14,6 +14,7 @@ class MeanSquaredError:
 
     def calculate_mse(self):
         _mse_list = []
+        _mse_form_list = []
         # extract the 'Lambda'values from dataframe
         _res_df = self._final_df.copy(deep=True)
         lmda_lst = _res_df.apply(lambda row: row['Lambda'], axis=1).tolist()
@@ -24,16 +25,30 @@ class MeanSquaredError:
             true_mag = rslt_frf_df['Org_Mag'].to_list()
             pred_mag = rslt_frf_df['Pred_Mag'].to_list()
             _mse = mean_squared_error(true_mag, pred_mag)
-            #logging.info(f'Lambda : {p} , MSE = {_mse}')
+            _mse_form = self._calc_mse_via_formula(true_mag, pred_mag)
+            # logging.info(f'Lambda : {p} , MSE = {_mse}')
             _mse_list.append(_mse)
-
+            _mse_form_list.append(_mse_form)
+        # endfor
         max_value = max(_mse_list)
         max_index = _mse_list.index(max_value)
-        # logging.info(
-        #     f'Max Value of mse:{max_value}, Lambda : {lmda_lst[max_index]}')
-        logging.info("MSE calculation completed, check the csv file for results")
+        logging.info(
+            "MSE calculation completed, check the csv file for detailed results")
+        logging.info(
+            f'Max Value of MSE :{max_value}, Lambda : {lmda_lst[max_index]}')
         _mse_df = pd.DataFrame(
-            list(zip(lmda_lst, _mse_list)), columns=['Lambda', 'MSE'])
+            list(zip(lmda_lst, _mse_list, _mse_form_list)), columns=['Lambda', 'MSE', 'MSE_formula'])
         _name = '{0}/' + f'mse_df.csv'
         _mse_df.to_csv(os.path.realpath(
             _name.format(Utils().get_results_dir_path())))
+
+    def _calc_mse_via_formula(self, t_mag, p_mag) -> float:
+        n = len(t_mag)
+        _sum = 0
+        for i in range(0, n):
+            diff = t_mag[i] - p_mag[i]  # observed - predicted
+            sq_diff = diff**2  # square of the diff
+            _sum = _sum + sq_diff  # sum these difference for the entire 'n'
+        # endfor
+        _MSE = _sum/n
+        return _MSE

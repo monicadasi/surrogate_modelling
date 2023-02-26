@@ -6,6 +6,7 @@ import time
 FORMAT_STR = '%(asctime)s [%(levelname)s] %(message)s'
 DATE_FMT = '%Y-%m-%d %H:%M:%S'
 
+
 class BaseLogger:
     def __init__(self, log_level) -> None:
         root = logging.getLogger()

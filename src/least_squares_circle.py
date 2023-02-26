@@ -7,7 +7,6 @@ import time
 from humanfriendly import format_timespan
 
 import matplotlib
-# matplotlib.use('GTK3Agg')
 
 import numpy as np
 import pandas as pd
@@ -95,36 +94,106 @@ class LeastSquaresCircle():
         return xc_2, yc_2, R_2
 
     # extract the ten adjacent points of the picked frequency
+    # def extract_neighbours(self, idx):
+    #     orgDFs = self.orgDF_list[:]  # copy list into new variable
+
+    #     val = orgDFs[idx]
+    #     extract_xy = val[-2:]  # type list
+    #     xy_tuple = tuple(extract_xy)
+
+    #     left_slice = idx - 20  # start of range
+    #     left_slice = min(max(0, left_slice), len(
+    #         orgDFs) - 40)  # account for edges
+    #     right_slice = left_slice + 40  # end of range
+
+    #     return orgDFs[left_slice:right_slice], xy_tuple
+
+    # def extract_neighbours(self, idx):
+    #     orgDFs = self.orgDF_list[:]  # copy list into new variable
+    #     _pick = orgDFs[idx]
+
+    #     extract_xy = _pick[-2:]  # type list
+    #     xy_tuple = tuple(extract_xy)
+
+    #     # copy list into new variable so we don't change it
+    #     main_list = orgDFs[:]
+    #     # extract the neighbours with the step freq. of 2
+    #     wrk_idxs = []
+    #     if idx % 2 == 0:
+    #         wrk_idxs = np.arange(0, len(main_list), 2).tolist()
+    #     else:
+    #         wrk_idxs = np.arange(1, len(main_list), 2).tolist()
+    #     wrk_idxs.sort()
+    #     # log.debug(f'Work IDx : {wrk_idx}')
+    #     wrk_list = []
+
+    #     if wrk_idxs[-1] == len(main_list):
+    #         wrk_idxs.remove(wrk_idxs[-1])
+
+    #     # main_array = np.array(main_list) # converting to numpy array
+    #     # #log.debug(f'Main array : {main_array} , main list : {main_list}')
+    #     # out_array = main_array.take(wrk_idx, axis=0)
+    #     # wrk_list = out_array.tolist() # if you want a list specifically
+    #     # wrk_list = out_list[:]
+
+    #     # for v in wrk_idx:
+    #     #     if v == len(main_list):
+    #     #         break
+    #     #     else:
+    #     #         wrk_list.append(main_list[v])
+    #     wrk_list = [main_list[x] for x in wrk_idxs]
+    #     # update the index with the new working list
+    #     _new_idx = wrk_list.index(_pick)
+    #     left_slice = _new_idx - 10  # start of range
+    #     # account for edges for left slice for the last element in the list
+    #     # len(list) - num.neightbours,  min(idx, idx-1) -> gives the exact neightbours otherwise would
+    #     # get one less neighbour
+    #     left_slice = min(max(0, left_slice), len(wrk_list) - 20)
+    #     right_slice = left_slice + 20  # end of range
+    #     return wrk_list[left_slice:right_slice], xy_tuple
+    
+    def pick_every_x_element(self, lst, index):
+        lst_cp_r = lst[:]
+        lst_cp_l = lst[:]
+        # Check if the given index is valid
+        if index < 0 or index >= len(lst_cp_r):
+            return None
+        
+        # Extract the sublist of every 4th element, starting from the given index
+        r_sublist = lst_cp_r[index::10]
+        # Extract the left sublist of every 4th element, starting from the given index
+        sub_slice = lst_cp_l[:index+1]
+        l_sublist = sub_slice[::-10]
+
+        l_sublist = list(reversed(l_sublist))
+        l_sublist.remove(l_sublist[-1])
+        _f_list = l_sublist + r_sublist
+        return _f_list
+
     def extract_neighbours(self, idx):
         orgDFs = self.orgDF_list[:]  # copy list into new variable
-
-        val = orgDFs[idx]
-        extract_xy = val[-2:]  # type list
+        _pick = orgDFs[idx]
+        extract_xy = _pick[-2:]  # type list
         xy_tuple = tuple(extract_xy)
+        
+        # copy list into new variable so we don't change it
+        main_list = orgDFs[:]
+        _res_list = self.pick_every_x_element(main_list, idx)
 
-        left_slice = idx - 5  # start of range
-        left_slice = min(max(0, left_slice), len(
-            orgDFs) - 10)  # account for edges
-        right_slice = left_slice + 10  # end of range
-
-        return orgDFs[left_slice:right_slice], xy_tuple
+        # update the index with the new working list
+        _new_idx = _res_list.index(_pick)
+        left_slice = _new_idx - 10  # start of range
+        # account for edges for left slice for the last element in the list
+        # internal logic behind the left slice
+        # len(list) - <req.num.neightbours>, min(<idx>, <idx-1>),
+        # gives the exact neightbours otherwise would get one less neighbour
+        left_slice = min(max(0, left_slice), len(_res_list) - 20)
+        
+        # extract the right slice range
+        right_slice = left_slice + 20  # end of range
+        return _res_list[left_slice:right_slice], xy_tuple
 
     def process_circle_extraction(self):
-        # # initialize the plot figure
-        # fig = go.Figure()
-        # fig1 = go.Figure()
-        # fig2 = go.Figure()
-        # fig3 = go.Figure()
-
-        # # Set plot axes properties
-        # fig.update_xaxes(zeroline=False)
-        # fig.update_yaxes(zeroline=False)
-
-        # set the graph template in plotly
-        large_rockwell_template = dict(
-            layout=go.Layout(title_font=dict(family="Rockwell", size=24)))
-        # ----------------------------------------------------------------------------------------------------------------
-
         # create a copy of the dataset
         frf_df_cp = DataParser().get_freq_data()
         frf_df6 = frf_df_cp.copy(deep=True)
@@ -207,6 +276,9 @@ class LeastSquaresCircle():
                 fig1 = go.Figure()
                 fig2 = go.Figure()
                 fig3 = go.Figure()
+                # set the graph template in plotly
+                large_rockwell_template = dict(
+                    layout=go.Layout(title_font=dict(family="Rockwell", size=24)))
             # -----------------------------------------------------------------------------------------------------------------
             for k, item in wrk_dict.items():
                 # extract the neighbours
@@ -385,12 +457,11 @@ class LeastSquaresCircle():
                     self._plt_dir)), engine="orca", format="png", width=800, height=400)
             # create dataframe with the desired attributes for regression modeling
             _df = pd.DataFrame(list(zip(_freqs, lambda_list, radii_list, phase_list, h_list, k_list, xy_list)),
-                                    columns=['Frequency', 'Lambda', 'Radius', 'Angle', 'x_center', 'y_center', 'coordinates'])
+                               columns=['Frequency', 'Lambda', 'Radius', 'Angle', 'x_center', 'y_center', 'coordinates'])
             self._df_list.append(_df)
         end_time = time.monotonic()
         log.info(f'Finished in {format_timespan(end_time - start_time)}')
         log.info('-------------------- END ---------------------------')
-
 
     def _get_df_list(self):
         log.debug(f'LeastSquareCircle(): _get_df_list = {len(self._df_list)}')
