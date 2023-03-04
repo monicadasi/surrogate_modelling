@@ -16,10 +16,11 @@ lambda_val = []
 
 log = logging.getLogger(__name__)
 
+
 class DataParser(metaclass=Singleton):
     def parse_freq_data(self):
         # Split the data into small chunks based on a literal '#Parameters' as split criteria
-        #log.info("File Path : ", fsplit_path)
+        # log.info("File Path : ", fsplit_path)
         with open(fname) as f:
             wsplit = ''
             f_out = None
@@ -91,7 +92,7 @@ class DataParser(metaclass=Singleton):
             # list of dataframes containing data corresponding to each lambda param
             df_list.append(val)
 
-        #log.info(len(df_list))
+        # log.info(len(df_list))
 
         # calculate the magnitude using real and imaginary values from data
         for dframe in df_list:

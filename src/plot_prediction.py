@@ -37,9 +37,21 @@ class PlotPrediction:
             x_val_1 = rslt_frf_df['Frequency'].to_list()
             y_val_1 = rslt_frf_df['Org_Mag'].to_list()
             y_val_2 = rslt_frf_df['Pred_Mag'].to_list()
+            text1 = ['Freq : {}'.format(
+                x_val_1[k]) + ',<br>Mag : {}'.format(y_val_1[k]) for k in range(len(x_val_1))]
+            text2 = ['Freq : {}'.format(
+                x_val_1[k]) + ',<br>Mag : {}'.format(y_val_2[k]) for k in range(len(x_val_1))]
             fig.add_trace(go.Scatter(
-                x=x_val_1, y=y_val_1, name=f' TrueL = {v}'))
-            fig.add_trace(go.Scatter(x=x_val_1, y=y_val_2, name=f'PredL= {v}'))
+                x=x_val_1, y=y_val_1, name=f' TrueLambda= {v}',
+                text=text1,
+                hoverinfo='name+text',
+                hoverlabel=dict(namelength=-1)))
+
+            fig.add_trace(go.Scatter(
+                x=x_val_1, y=y_val_2, name=f'PredLambda= {v}',
+                text=text2,
+                hoverinfo='name+text',
+                hoverlabel=dict(namelength=-1)))
 
         # set the graph template in plotly
         large_rockwell_template = dict(
@@ -60,3 +72,5 @@ class PlotPrediction:
         _name = '{0}/' + f'true_pred_MagnitudePlot.html'
         fig.write_html(os.path.realpath(
             _name.format(Utils().get_results_dir_path())))
+        fig.write_image(os.path.realpath(
+            '{0}/true_pred_MagnitudePlot.svg'.format(Utils().get_results_dir_path())))

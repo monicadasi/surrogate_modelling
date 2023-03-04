@@ -29,9 +29,14 @@ class MagnitudePlot:
                 x_val = rslt_frf_df['Frequency'].to_list()
                 y_val = rslt_frf_df['Pred_Mag'].to_list()
                 lm_name = f'Lambda = {b}'
+                text = ['Freq : {}'.format(
+                    x_val[k]) + ',<br>Mag : {}'.format(y_val[k]) for k in range(len(x_val))]
                 fig.add_trace(go.Scatter(x=x_val, y=y_val,
                                          mode='lines',
-                                         name=lm_name))
+                                         name=lm_name,
+                                         text=text,
+                                         hoverinfo='name+text',
+                                         hoverlabel=dict(namelength=-1)))
                 rslt_lst = rslt_frf_df.index
                 self.df = self.df.drop(rslt_lst, axis=0)
             else:
@@ -53,3 +58,5 @@ class MagnitudePlot:
         fig.update_traces(line=dict(width=1))
 
         fig.write_html(plt_name)
+        fig.write_image(os.path.realpath(
+            '{0}/predicted_freq_plot.svg'.format(self._res_path)))

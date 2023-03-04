@@ -37,33 +37,34 @@ class DataModeling():
 
         self.freqncy_list = []
         self.lambda_list = []
-        #original data attributes
+        # original data attributes
         self.orig_x_list = []
         self.orig_y_list = []
-        self.orig_mag_list =[]
-        #predicted data attributes
+        self.orig_mag_list = []
+        # predicted data attributes
         self.pred_x_list = []
         self.pred_y_list = []
         self.pred_mag_list = []
-        #newly created dataframe with original and predicted values
+        # newly created dataframe with original and predicted values
         self.new_df_list = []
 
     def model_data(self) -> None:
         log.info('Modeling the data...')
-        #self.extract_dataframe_info()
+        # self.extract_dataframe_info()
         wrking_lmda_list = self.extract_fewer_samples()
         self.extract_df_info_fewer_samples(wrking_lmda_list)
 
     def extract_fewer_samples(self):
         """
-        1. Pick fewer lambda sample from the dataframe for eg. 10 values
-        in between 7-8 so on until 11. At the moment the lambda samples
-        are 50 between 7-8. Train the model with these fewer samples
+        1. Pick fewer lambda samples from the dataframe for pick eg. 7 values
+        in between 7-8 and so on until 11. At the moment the lambda samples
+        are 50 per range (between 7-8). Train the model with these fewer samples
         and interpolate the data for other lambda values.
         """
         # _wrking_df = self._df_list[:]
         _wrking_df = pd.concat(self._df_list)
-        _wrking_df = _wrking_df.sort_values(['Lambda', 'Frequency'], ascending = [True, True])
+        _wrking_df = _wrking_df.sort_values(
+            ['Lambda', 'Frequency'], ascending=[True, True])
         _wrking_df.reset_index(drop=True, inplace=True)
         lmda_lst = _wrking_df.apply(lambda row: row['Lambda'], axis=1).tolist()
 
@@ -72,18 +73,25 @@ class DataModeling():
         lmda_lst_cp = lmda_lst[:]
         lmbda_sublists = []
 
-        for i in range(0, 4):
+        for _ in range(0, 4):
             lmda_lst_cp.sort()
             sub_list = lmda_lst_cp[:50]
             sub_list.sort()
             lmda_lst_cp = list(set(lmda_lst_cp)-set(sub_list))
-            sub_list = sub_list[0:len(sub_list)-1:3] # 17 elements would be picked
-            lmbda_sublists.append(sub_list)    
-        #merge all sublist into one , flatten the list of list into one
+            # 17 elements would be picked
+            sub_list = sub_list[0:len(sub_list)-1:3]
+            lmbda_sublists.append(sub_list)
+        # to avoid extrapolation for the lambda at 11.0 , add the last value to list
+        # so that we train the model for this value too.
+        # add the last lambda value to list
+        lmbda_sublists.append([lmda_lst[-1]])
+        # merge all sublists into one , flatten the list of lists into one
+        log.info(f'Lambda Sublists : {lmbda_sublists}')
         merged_list = list(itertools.chain(*lmbda_sublists))
+        log.info(f'Length of Lambda List for train/test : {len(merged_list)}')
         return merged_list
 
-#---------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
     def extract_dataframe_info(self):
         start_time = time.monotonic()
         for _df in self._df_list:
@@ -92,7 +100,7 @@ class DataModeling():
 
             self.fq = _fq[-1]
             res_df = _df[_df['Frequency'].isin([self.fq])]
-            lambda_vals = res_df['Lambda'] #length here is 200
+            lambda_vals = res_df['Lambda']  # length here is 200
 
             self.model_radius(lambda_vals, res_df[RADIUS])
             self.model_phase(lambda_vals, res_df[ANGLE])
@@ -107,27 +115,30 @@ class DataModeling():
                 self.predict_Xc(l_val)
                 self.predict_Yc(l_val)
                 self.extract_predicted_xy_coord(l_val, res_df)
-            # create dataframe with the desired for regression modeling
 
+            # create dataframe with the desired for regression modeling
             _new_df = pd.DataFrame(list(zip(
-                self.freqncy_list, self.lambda_list, 
-                self.orig_x_list, self.orig_y_list, self.orig_mag_list, 
+                self.freqncy_list, self.lambda_list,
+                self.orig_x_list, self.orig_y_list, self.orig_mag_list,
                 self.pred_x_list, self.pred_y_list, self.pred_mag_list)),
-                columns=['Frequency', 'Lambda', 'Org_X', 'Org_Y', 'Org_Mag', 'Pred_X', 'Pred_Y', 'Pred_Mag'])           
+                columns=['Frequency', 'Lambda', 'Org_X', 'Org_Y', 'Org_Mag', 'Pred_X', 'Pred_Y', 'Pred_Mag'])
             self.clear_lists()
             self.new_df_list.append(_new_df)
-        #endfor
+        # endfor
         end_time = time.monotonic()
-        log.info(f'Predictions finished in {format_timespan(end_time - start_time)}')
+        log.info(
+            f'Predictions finished in {format_timespan(end_time - start_time)}')
         # concat the dataframes in the list and create a single dataframe with the final data for further plotting
         self.final_df = pd.concat(self.new_df_list)
-        self.final_df = self.final_df.sort_values(['Lambda', 'Frequency'], ascending = [True, True])
+        self.final_df = self.final_df.sort_values(
+            ['Lambda', 'Frequency'], ascending=[True, True])
         self.final_df.reset_index(drop=True, inplace=True)
         df_name = '{0}/' + f'final_df.csv'
-        self.final_df.to_csv(os.path.realpath(df_name.format(utils.Utils().get_results_dir_path())))
-        #Plot the True value and Predicted Magnitude values w.r.t frequency as function of lambda
+        self.final_df.to_csv(os.path.realpath(
+            df_name.format(utils.Utils().get_results_dir_path())))
+        # Plot the True value and Predicted Magnitude values w.r.t frequency as function of lambda
         PlotPrediction(self.final_df)
-#-------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------
 
     def extract_df_info_fewer_samples(self, _lambda_list):
         start_time = time.monotonic()
@@ -140,8 +151,8 @@ class DataModeling():
             # use the res_df to extract the fewer lambda samples
             _wrking_df = res_df[res_df['Lambda'].isin(_lambda_list)]
 
-            lambda_vals = _wrking_df['Lambda'] #length here is 68
-            org_lambda_list = res_df['Lambda'] #length here is 200
+            lambda_vals = _wrking_df['Lambda']  # length here is 68
+            org_lambda_list = res_df['Lambda']  # length here is 200
             # training is done on the fewer lambda samples
             self.model_radius(lambda_vals, _wrking_df[RADIUS])
             self.model_phase(lambda_vals, _wrking_df[ANGLE])
@@ -150,7 +161,7 @@ class DataModeling():
 
             # models are prepared.. it's time for some predictions ;)
             log.info(f'Predictions for the frequency {self.fq} is,')
-            for l_val in org_lambda_list: # predict for all the lambda values
+            for l_val in org_lambda_list:  # predict for all the lambda values
                 self.predict_radius(l_val)
                 self.predict_phase(l_val)
                 self.predict_Xc(l_val)
@@ -159,24 +170,27 @@ class DataModeling():
             # create dataframe with the desired for regression modeling
 
             _new_df = pd.DataFrame(list(zip(
-                self.freqncy_list, self.lambda_list, 
-                self.orig_x_list, self.orig_y_list, self.orig_mag_list, 
+                self.freqncy_list, self.lambda_list,
+                self.orig_x_list, self.orig_y_list, self.orig_mag_list,
                 self.pred_x_list, self.pred_y_list, self.pred_mag_list)),
-                columns=['Frequency', 'Lambda', 'Org_X', 'Org_Y', 'Org_Mag', 'Pred_X', 'Pred_Y', 'Pred_Mag'])           
+                columns=['Frequency', 'Lambda', 'Org_X', 'Org_Y', 'Org_Mag', 'Pred_X', 'Pred_Y', 'Pred_Mag'])
             self.clear_lists()
             self.new_df_list.append(_new_df)
-        #endfor
+        # endfor
         end_time = time.monotonic()
-        log.info(f'Predictions finished in {format_timespan(end_time - start_time)}')
+        log.info(
+            f'Predictions finished in {format_timespan(end_time - start_time)}')
         # concat the dataframes in the list and create a single dataframe with the final data for further plotting
         self.final_df = pd.concat(self.new_df_list)
-        self.final_df = self.final_df.sort_values(['Lambda', 'Frequency'], ascending = [True, True])
+        self.final_df = self.final_df.sort_values(
+            ['Lambda', 'Frequency'], ascending=[True, True])
         self.final_df.reset_index(drop=True, inplace=True)
         df_name = '{0}/' + f'final_df.csv'
-        self.final_df.to_csv(os.path.realpath(df_name.format(utils.Utils().get_results_dir_path())))
-        #Plot the True value and Predicted Magnitude values w.r.t frequency as function of lambda
+        self.final_df.to_csv(os.path.realpath(
+            df_name.format(utils.Utils().get_results_dir_path())))
+        # Plot the True value and Predicted Magnitude values w.r.t frequency as function of lambda
         PlotPrediction(self.final_df)
-#----------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------
 
     def clear_lists(self) -> None:
         self.orig_x_list.clear()
@@ -198,8 +212,8 @@ class DataModeling():
         y = np.array(radii)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=10)
-
+            X, y, test_size=0.3, random_state=10)
+        log.info(f'train:test : 40:60')
         if self._plot == 'True':
             rcParams['axes.spines.top'] = False
             rcParams['axes.spines.right'] = False
@@ -231,16 +245,18 @@ class DataModeling():
             ax1.set_xlabel('Lambda')
             ax1.set_ylabel('Radius')
             ax1.plot(x_train, self.reg_radius.predict(x_poly),
-                    c='blue', label='Predicted Line')
+                     c='blue', label='Predicted Line')
             ax1.legend(loc="best")
             f_name = '{0}/' + f'Radius[Model]_{self.fq}.png'
             plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
             plt.close()
 
 
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+
     def predict_radius(self, lambda_val):
-        pred_r = self.reg_radius.predict(self.radii_poly.transform([[lambda_val]]))
+        pred_r = self.reg_radius.predict(
+            self.radii_poly.transform([[lambda_val]]))
 
         pred_r = list(pred_r.flatten())
         self.R = pred_r[-1]
@@ -256,8 +272,8 @@ class DataModeling():
         y = np.array(angle)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=10)
-        
+            X, y, test_size=0.3, random_state=10)
+
         if self._plot == 'True':
             rcParams['axes.spines.top'] = False
             rcParams['axes.spines.right'] = False
@@ -289,16 +305,17 @@ class DataModeling():
             ax2.set_xlabel('Lambda')
             ax2.set_ylabel('Angle')
             ax2.plot(x_train, self.reg_phase.predict(x_poly),
-                    c='blue', label='Predicted Line')
+                     c='blue', label='Predicted Line')
             ax2.legend(loc="upper right")
 
             f_name = '{0}/' + f'Phase[Model]_{self.fq}.png'
             plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
             plt.close()
 
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
     def predict_phase(self, lambda_val):
-        pred_an = self.reg_phase.predict(self.ph_poly.transform([[lambda_val]]))
+        pred_an = self.reg_phase.predict(
+            self.ph_poly.transform([[lambda_val]]))
 
         pred_an = list(pred_an.flatten())
         self.Ph = pred_an[-1]
@@ -314,8 +331,8 @@ class DataModeling():
         y = np.array(x_center)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=10)
-        
+            X, y, test_size=0.3, random_state=10)
+
         if self._plot == 'True':
             rcParams['axes.spines.top'] = False
             rcParams['axes.spines.right'] = False
@@ -344,7 +361,7 @@ class DataModeling():
             ax3.set_xlabel('Lambda')
             ax3.set_ylabel('X_Center')
             ax3.plot(x_train, self.reg_xc.predict(x_poly),
-                    c='blue', label='Predicted Line')
+                     c='blue', label='Predicted Line')
             ax3.legend(loc="upper right")
 
             f_name = '{0}/' + f'X-Coordinate[Model]_{self.fq}.png'
@@ -352,7 +369,8 @@ class DataModeling():
             plt.close()
 
 
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+
     def predict_Xc(self, lambda_val):
         pred_Xc = self.reg_xc.predict(self.poly_xc.transform([[lambda_val]]))
         pred_Xc = list(pred_Xc.flatten())
@@ -370,7 +388,7 @@ class DataModeling():
         y = np.array(y_center)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=10)
+            X, y, test_size=0.3, random_state=10)
         if self._plot == 'True':
             rcParams['axes.spines.top'] = False
             rcParams['axes.spines.right'] = False
@@ -399,31 +417,32 @@ class DataModeling():
             ax4.set_xlabel('Lambda')
             ax4.set_ylabel('Y_Center')
             ax4.plot(x_train, self.reg_yc.predict(x_poly),
-                    c='blue', label='Predicted Line')
+                     c='blue', label='Predicted Line')
             ax4.legend(loc="upper left")
 
             f_name = '{0}/' + f'Y-coordinate[Model]_{self.fq}.png'
             plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
             plt.close()
 
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
     def predict_Yc(self, lambda_val):
         pred_Yc = self.reg_yc.predict(self.poly_yc.transform([[lambda_val]]))
         pred_Yc = list(pred_Yc.flatten())
         self.Yc = pred_Yc[-1]
         log.debug(f'Predicted Y-Center : {self.Yc}')
 
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
     def extract_predicted_xy_coord(self, l_val, _df):
         a = math.cos(self.Ph)
         b = math.sin(self.Ph)
-        X_coord =  self.Xc + (self.R * a)
+        X_coord = self.Xc + (self.R * a)
         Y_coord = self.Yc + (self.R * b)
         # for now the list size is 1
-        #_df = self._df_list[-1]
+        # _df = self._df_list[-1]
         _dframe = _df[_df.Lambda == l_val]
         org_crd = _dframe['coordinates'].to_list()
-        log.info('Freq: {0} , Lambda: {1}'.format(_dframe.iloc[0]['Frequency'], _dframe.iloc[0]['Lambda'])) #.iloc[0]['A']
+        log.info('Freq: {0} , Lambda: {1}'.format(
+            _dframe.iloc[0]['Frequency'], _dframe.iloc[0]['Lambda']))  # .iloc[0]['A']
         log.info(f'\tTrue Coordinate : {org_crd[-1]}')
         self.freqncy_list.append(self.fq)
         self.lambda_list.append(l_val)
@@ -447,6 +466,6 @@ class DataModeling():
         mag = abs(cn)
         self.pred_mag_list.append(mag)
 
-    #----------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
     def get_final_df(self):
         return self.final_df

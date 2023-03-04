@@ -10,7 +10,6 @@ from least_squares_circle import LeastSquaresCircle
 
 from data_modeling import DataModeling
 from magnitude_plot import MagnitudePlot
-from multiprocessing import Process
 
 log = logging.getLogger(__name__)
 
