@@ -27,7 +27,7 @@ LIST_SIZE = 1
 log = logging.getLogger(__name__)
 
 
-class DataModeling():
+class DataModeling:
 
     def __init__(self, df) -> None:
         self.res_freqs = []
@@ -212,8 +212,8 @@ class DataModeling():
         y = np.array(radii)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.3, random_state=10)
-        log.info(f'train:test : 40:60')
+            X, y, test_size=0.6, random_state=10)
+        #log.info(f'train:test : 40:60')
         if self._plot == 'True':
             rcParams['axes.spines.top'] = False
             rcParams['axes.spines.right'] = False
@@ -272,7 +272,7 @@ class DataModeling():
         y = np.array(angle)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.3, random_state=10)
+            X, y, test_size=0.6, random_state=10)
 
         if self._plot == 'True':
             rcParams['axes.spines.top'] = False
@@ -331,7 +331,7 @@ class DataModeling():
         y = np.array(x_center)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.3, random_state=10)
+            X, y, test_size=0.6, random_state=10)
 
         if self._plot == 'True':
             rcParams['axes.spines.top'] = False
@@ -388,7 +388,7 @@ class DataModeling():
         y = np.array(y_center)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.3, random_state=10)
+            X, y, test_size=0.6, random_state=10)
         if self._plot == 'True':
             rcParams['axes.spines.top'] = False
             rcParams['axes.spines.right'] = False
@@ -456,7 +456,7 @@ class DataModeling():
             org_mag = abs(org_cn)
             self.orig_mag_list.append(org_mag)
         else:
-            log.error("Please check the coordinates extraction")
+            log.error("Please check the coordinates extraction.")
 
         log.info(f'Predicted Coordinate : ({X_coord}, {Y_coord})')
         logging.info('-------------------------------------------------------')
@@ -466,6 +466,6 @@ class DataModeling():
         mag = abs(cn)
         self.pred_mag_list.append(mag)
 
-    # ----------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------
     def get_final_df(self):
         return self.final_df

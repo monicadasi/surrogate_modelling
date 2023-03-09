@@ -7,6 +7,7 @@ from base_logger import BaseLogger
 from data_parser import DataParser
 from data_visualizer import DataVisualizer
 from least_squares_circle import LeastSquaresCircle
+from three_point_circle import ThreePointCircle
 
 from data_modeling import DataModeling
 from magnitude_plot import MagnitudePlot
@@ -53,8 +54,10 @@ def visualize_data():
 def create_model_predict():
     _lsc = LeastSquaresCircle()
     _lsc.process_circle_extraction()
-
     _df_list = _lsc._get_df_list()
+    # _tpc = ThreePointCircle()
+    # _tpc.process_circle_extraction()
+    # _df_list = _tpc._get_df_list()
     _dm = DataModeling(_df_list)
     _dm.model_data()
     _final_df = _dm.get_final_df()
