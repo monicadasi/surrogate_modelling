@@ -59,4 +59,4 @@ class MagnitudePlot:
 
         fig.write_html(plt_name)
         fig.write_image(os.path.realpath(
-            '{0}/predicted_freq_plot.svg'.format(self._res_path)))
+            '{0}/predicted_freq_plot.svg'.format(self._res_path)), scale=2)

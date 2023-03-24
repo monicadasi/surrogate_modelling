@@ -1,27 +1,56 @@
-import logging
-import math
 import os
-import time 
+import math
+import random
+import logging
+
+import time
 from humanfriendly import format_timespan
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
-
-from sympy import Point, Circle
-import matplotlib, random
-from data_parser import DataParser
+import plotly
 import plotly.graph_objects as go
+
+from scipy import optimize
+from numpy import *
+from data_parser import DataParser
 from utils import Utils
 
+import matplotlib, random
+from matplotlib import pyplot as p
+#from matplotlib.backends.backend_pdf import PdfPages
+
 log = logging.getLogger(__name__)
+logging.getLogger('PIL').setLevel(logging.WARNING)
+logging.getLogger('matplotlib.font_manager').disabled = True
+method_2b  = "leastsq with jacobian"
 
-class ThreePointCircle:
+"""
+Circle approximation using Least Squares Method.
+Ref: https://scipy-cookbook.readthedocs.io/items/Least_Squares_Circle.html
+"""
 
+
+class LeastSquaresCircleJacobian:
     def __init__(self) -> None:
         self._plt_dir = Utils().get_plots_dir_path()
+        self._circ_dir = Utils().get_circle_plots_dir_path()
         self._df_list = []
         self._plot = Utils()._draw_plots()
-    #-------------------------------------------------------------------------------
-    # reference : https://stackoverflow.com/a/55828367
+        plotly.io.orca.config.executable = r'C:\ProgramData\miniconda3\orca_app\orca.exe'
+        plotly.io.orca.config.save()
+
+        #self.file_name = "circle_plots.pdf"
+
+        _pdf_name = '{0}/' + f'circle_plots.pdf'
+        self.file_name = os.path.realpath(_pdf_name.format(self._circ_dir))
+
+
+    """
+    Random color generation for plots
+    reference : https://stackoverflow.com/a/55828367
+    """
     def generate_random_color():
         hex_colors_dic = {}
         rgb_colors_dic = {}
@@ -30,33 +59,166 @@ class ThreePointCircle:
             hex_colors_only.append(hex)
             hex_colors_dic[name] = hex
             rgb_colors_dic[name] = matplotlib.colors.to_rgb(hex)
-
         # getting random color from list of hex colors
         return random.choice(hex_colors_only)
 
-    #-------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------
+    #Ref: https://scipy-cookbook.readthedocs.io/items/Least_Squares_Circle.html       
+    #------------------------------------------------------------------------------
+    def calc_R(self, xc, yc):
+        """ calculate the distance of each data points from the center (xc, yc) """
+        return sqrt((self.x-xc)**2 + (self.y-yc)**2)
 
-    # Return circle center and radius
-    def three_point_circle(self, t1,t2,t3):
-        log.debug("\n three_point_circle() : \n tuple1 : {0},\n tuple2 : {1},\n tuple3 : {2}\n".format(t1,t2,t3))
-        c2 = Circle(Point(t1), Point(t2), Point(t3))
-        h = c2.center[0]
-        k = c2.center[1]
-        r = c2.radius.evalf()
-        return h,k,r
-    #-------------------------------------------------------------------------------
+    def f_2b(self, c):
+        """ calculate the algebraic distance between the 2D points and the mean circle centered at c=(xc, yc) """
+        Ri = self.calc_R(*c)
+        return Ri - Ri.mean()
+
+    def Df_2b(self, c):
+        """ Jacobian of f_2b
+        The axis corresponding to derivatives must be coherent with the col_deriv option of leastsq"""
+    
+        xc, yc     = c
+        df2b_dc    = empty((len(c), self.x.size))
+
+        Ri = self.calc_R(xc, yc)
+        df2b_dc[0] = (xc - self.x)/Ri     # dR/dxc
+        df2b_dc[1] = (yc - self.y)/Ri     # dR/dyc
+        df2b_dc    = df2b_dc - df2b_dc.mean(axis=1)[:, newaxis]
+
+        return df2b_dc
+    
+    
+    """
+    Computes given x and y points and approximates the best possible
+    circle with the given x and y points
+    Parameters
+    ----------
+    x - List
+    list of X-coordinates in the which the circle should pass
+    y - List
+    list of Y-coordinates in the which the circle should pass
+    
+    Returns
+    -------
+    Circle center(Xc, Yc) and Radius (R)
+    """
+
+    def least_square_circle_extraction(self, x, y):
+        # coordinates of the barycenter
+        x_m = mean(x)
+        y_m = mean(y)
+
+        center_estimate = x_m, y_m
+        center_2b, ier = optimize.leastsq(self.f_2b, center_estimate, 
+                                          Dfun=self.Df_2b, col_deriv=True)
+
+        xc_2b, yc_2b = center_2b
+        Ri_2b        = self.calc_R(*center_2b)
+        R_2b         = Ri_2b.mean()
+        #residu_2b    = sum((Ri_2b - R_2b)**2)
+
+        #print(f'x-center : {xc_2b}, y-center : {yc_2b}, radius : {R_2b}')
+        return xc_2b,yc_2b,R_2b
 
     # extract the adjacent points of the picked frequency
+    # def extract_neighbours(self, idx):
+    #     orgDFs = self.orgDF_list[:]  # copy list into new variable
+
+    #     val = orgDFs[idx]
+    #     extract_xy = val[-2:]  # type list
+    #     xy_tuple = tuple(extract_xy)
+
+    #     left_slice = idx - 10  # start of range
+    #     left_slice = min(max(0, left_slice), len(orgDFs) - 20)  # account for edges
+    #     right_slice = left_slice + 20  # end of range
+
+    #     return orgDFs[left_slice:right_slice], xy_tuple
+
+    # def pick_every_x_element(self, lst, index):
+    #     lst_cp_r = lst[:]
+    #     lst_cp_l = lst[:]
+    #     # Check if the given index is valid
+    #     if index < 0 or index >= len(lst_cp_r):
+    #         return None
+
+    #     # Extract every 10th element from the sublist, starting from the given index
+    #     r_sublist = lst_cp_r[index::2]
+    #     # Extract every 10th element to the left sublist, starting from the given index
+    #     sub_slice = lst_cp_l[:index+1]
+    #     l_sublist = sub_slice[::-2]
+
+    #     l_sublist = list(reversed(l_sublist))
+    #     # as picked index is added twice remove it from the left sublist and join with the right sublist
+    #     l_sublist.remove(l_sublist[-1])
+    #     _f_list = l_sublist + r_sublist
+    #     return _f_list
+#----------------------------------------------------------------------------------------------------------------
+
+    def pick_every_x_element(self, lst, index):
+        pickd_lm = lst[index][1]
+        pickd_frq = lst[index][0]
+       
+        # print(f'Picked lambda -->  {pickd_lm}, Picked Frq ---> {pickd_frq}')
+        
+        # [34.770000457764, 7.0, 0.12457949668169, -0.48617362976074]
+        # Filter based on the lambda value column (index 1)
+        filtered_data = list(filter(lambda x: x[1] == pickd_lm, lst))
+        
+        lst_cp_r = filtered_data[:]
+        lst_cp_l = filtered_data[:]
+        
+        # index_2d = [(i, x.index(pickd_frq)) for i, x in enumerate(filtered_data) if pickd_frq in x]
+        # index = index_2d[0][0] # get the row index
+
+        filtered_array = list(filter(lambda x: pickd_frq in x, filtered_data))
+        if filtered_array:
+            index = filtered_data.index(filtered_array[0])
+        else: index = -1
+        #print(f"Extracted new Index2d : {index_2d}, index of row : {index}")
+
+        # Check if the given index is valid
+        if index < 0 or index >= len(lst_cp_r):
+            return None
+        
+        # Extract every 10th element from the sublist, starting from the given index
+        r_sublist = lst_cp_r[index::10]
+        # Extract every 10th element to the left sublist, starting from the given index
+        sub_slice = lst_cp_l[:index+1]
+        l_sublist = sub_slice[::-10]
+
+        l_sublist = list(reversed(l_sublist))
+        # as picked index is added twice remove it from the left sublist and join with the right sublist
+        l_sublist.remove(l_sublist[-1])
+        _f_list = l_sublist + r_sublist
+        
+        return _f_list
+
+#----------------------------------------------------------------------------------------------------------------
     def extract_neighbours(self, idx):
-        res = []
-        if idx < 15: # skip the 1st index : 0 as it does't have 2 adjacent neighbours
-            pass
-        elif idx > (len(self.orgDF_list) - 15): # skip the last indx too.:
-            pass
-        else:
-            res = [self.orgDF_list[idx - 15], self.orgDF_list[idx], self.orgDF_list[idx + 15]]
-        return res, self.orgDF_list[idx]
-    
+        orgDFs = self.orgDF_list[:]  # copy list into new variable
+        _pick = orgDFs[idx]
+        extract_xy = _pick[-2:]  # type list
+        xy_tuple = tuple(extract_xy)
+
+        # copy list into new variable so we don't change it
+        main_list = orgDFs[:]
+        _res_list = self.pick_every_x_element(main_list, idx)
+
+        # update the index with the new working list
+        _new_idx = _res_list.index(_pick)
+        left_slice = _new_idx - 5  # start of range
+        # account for edges for left slice for the last element in the list
+        # internal logic behind the left slice
+        # max((0, left_sclice), (len(list) - <req.num.neightbours>)), min(<idx>, <idx-1>),
+        # gives the exact neightbours otherwise would get one less neighbour
+        left_slice = min(max(0, left_slice), len(_res_list) - 10)
+
+        # extract the right slice range
+        right_slice = left_slice + 10  # end of range
+        return _res_list[left_slice:right_slice], xy_tuple
+
+# ---------------------------------------------------------------------------------------------
     def process_circle_extraction(self):
         # create a copy of the dataset
         frf_df_cp = DataParser().get_freq_data()
@@ -72,18 +234,18 @@ class ThreePointCircle:
 
         log.info(f'Length original dataframe : {len(self.orgDF_list)}')
 
-        # ----------------------------------------------------------------------------------------------------------------
+        # ---------------------------------------------------------------------------------------------
 
         # pick a random frequency from the data , 'n' denotes : number of samples to be picked
         # In this case we just pick one frequency and create a model for that.
-        df_elements = frf_df6.sample(n=3)
+        df_elements = frf_df6.sample(n=100)
         # # contains the row of the picked frequency
         # log.info(f'<--------- Randomly Picked Row --------->\n{df_elements}')
 
         start_time = time.monotonic()
         log.info('------------------- START --------------------------')
 
-        # ----------------------------------------------------------------------------------------------------------------
+        # -----------------------------------------------------------------------------------------------
 
         # extract the freq. to a list
         frq_list = df_elements['Frequency'].to_list()
@@ -133,7 +295,10 @@ class ThreePointCircle:
             h_list = []
             k_list = []
             xy_list = []
+            
+            theta_fit = linspace(-pi, pi, 180)
             # -----------------------------------------------------------------------------------------------------------------
+
             if self._plot:
                 # Initialize the plot figures
                 fig = go.Figure()
@@ -153,21 +318,33 @@ class ThreePointCircle:
                 lambda_name = f'Lambda = {lambda_value}'
                 log.debug(
                     '\n-----------------------------------------------------------------------------------------')
-                log.debug('\n=> Extracted Info : {0}'.format(info))
+                log.debug('\n=> Extracted Info : {0} \n=> (x,y) : {1}'.format(
+                    info, xy_tuple))
                 log.debug(f'\n=> {frq_name} , {lambda_name}')
 
                 # extract the coordinate tuples from the info
-                coord = []
+                self.x = []
+                self.y = []
                 freq_pts = []
-                for _, val in enumerate(info):
-                    coord.append(tuple(val[2:])) # 0 : Freq and 1 : Lambda from 2: Coordinates
+                for item in info:
+                    # 0 : Freq and 1 : Lambda from 2: Coordinates
+                    coord = tuple(item[2:])
+                    # extract the first element of the tuple into list
+                    self.x.append(coord[0])
+                    # extract the second element of the tuple into a list
+                    self.y.append(coord[1])
                     freq_pts.append(item[0])
-
+                self.x = r_[self.x]  # convert to numpy array
+                self.y = r_[self.y]
                 # print('--------------------------------------------------------------------------------------')
-                log.debug("\nExtracted Coordinates {0}: \n|-> Adj. Frequencies : {1}".format(coord, freq_pts))
+                # print("\nExtracted Coordinates {0}: \n|-> Adj. Frequencies : {1}".format(coord, freq_pts))
+                log.debug(
+                    "\n=> Extracted X-Points : {0} \n=> Extracted Y-Points : {1} \n=> Adj. Frequencies : {2}".format(self.x, self.y, freq_pts))
 
                 # Now pass this extracted 3 x-y points and calculate the center and radius
-                h,k,radius = self.three_point_circle(*coord)
+                # h,k,radius = np.float64(three_point_circle(*coord))
+                h, k, radius = np.float64(
+                    self.least_square_circle_extraction(self.x, self.y))
                 # log.debug("\n=> center(h : {0}, k : {1}), radius : {2}".format(
                 #     h, k, radius))
 
@@ -190,6 +367,54 @@ class ThreePointCircle:
                 k_list.append(k)
                 xy_list.append(xy_tuple)  # contains list of xy tuples
                 _freqs.append(frq)
+                if self._plot:
+                    """
+                    Draw the data points, best fit circles and the center
+                    """
+                    f = p.figure(facecolor='white')
+                    p.axis('equal')
+                    ax = p.subplot(111)
+    
+                    #plot the circles
+                    xc_2b = h
+                    yc_2b = k
+                    R_2b = radius
+
+                    x_fit2 = xc_2b + R_2b*cos(theta_fit)
+                    y_fit2 = yc_2b + R_2b*sin(theta_fit)
+
+                    ax.plot(x_fit2, y_fit2, 'k--', label=method_2b, lw=1)
+
+                    # mark the center of the circle
+                    ax.plot([xc_2b], [yc_2b], 'gD', mec='r', mew=1)
+                    # draw
+                    p.xlabel('x')
+                    p.ylabel('y')
+
+                    # plot data points
+                    ax.plot(self.x, self.y, 'ro', label='data', ms=5, mec='b', mew=1)
+
+                    # Shrink current axis's height by 10% on the bottom
+                    box = ax.get_position()
+                    ax.set_position([box.x0, box.y0 + box.height * 0.2,
+                                    box.width, box.height * 1.0])
+
+                    # Put a legend below current axis
+                    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+                            fancybox=True, shadow=True, ncol=5, labelspacing=0.1)
+                    ax.grid()
+                    p.title('Least Squares Circle')
+                    #fmt_str = datetime.now().strftime("%Y%m%d-%H%M%S")
+                    _frq_dir = Utils().create_freq_dir(frq)
+                    circ_plt = '{0}/' + f'lsc_jacobian_{frq}_{lambda_value}.png'
+                    p_name = os.path.realpath(circ_plt.format(_frq_dir))
+                    f.savefig(p_name)
+                    f.clf()
+                    f.clear()
+                    matplotlib.pyplot.close()
+                    # p.close()
+                    # p.clf()
+                    #self.save_circle_plots()
 
                 if self._plot:
                     # Set plot axes properties
@@ -318,3 +543,20 @@ class ThreePointCircle:
     def _get_df_list(self):
         log.debug(f'LeastSquareCircle(): _get_df_list = {len(self._df_list)}')
         return self._df_list
+    
+    # def save_circle_plots(self):
+    #     _pdfpg = PdfPages(self.file_name)
+
+    #     # get_fignums Return list of existing 
+    #     # figure numbers
+    #     fig_nums = p.get_fignums()  
+    #     figs = [p.figure(n) for n in fig_nums]
+
+    #     # iterating over the numbers in list
+    #     for fig in figs: 
+    #         # save the files
+    #         fig.savefig(_pdfpg, format='pdf') 
+      
+    #     # close the object
+    #     _pdfpg.close()  
+

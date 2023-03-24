@@ -15,25 +15,28 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 
-import random
-random.seed(100)
+from singleton import Singleton
+
+# import random
+# random.seed(100)
 
 RADIUS = 'Radius'
 ANGLE = 'Angle'
 X_CENTER = 'x_center'
 Y_CENTER = 'y_center'
 LIST_SIZE = 1
+REF_MODEL_SCORE = 0.95
 
 log = logging.getLogger(__name__)
 
 
-class DataModeling:
+class DataModeling(metaclass=Singleton):
 
-    def __init__(self, df) -> None:
+    def __init__(self) -> None:
         self.res_freqs = []
         self._model_dir = utils.Utils().get_models_dir_path()
         self._plot = utils.Utils()._draw_plots()
-        self._df_list = df
+        #self._df_list = df
 
         self.freqncy_list = []
         self.lambda_list = []
@@ -47,22 +50,43 @@ class DataModeling:
         self.pred_mag_list = []
         # newly created dataframe with original and predicted values
         self.new_df_list = []
+        
+        # based on the experiments
+        self.radius_degree = 9
+        self.phase_degree = 4
+        self.xcenter_degree = 10
+        self.ycenter_degree = 9
+
+    def set_df_list(self, df):
+        self._df_list = df
 
     def model_data(self) -> None:
-        log.info('Modeling the data...')
-        # self.extract_dataframe_info()
+        log.info('Modelling the data...')
+        #self.extract_dataframe_info()
         wrking_lmda_list = self.extract_fewer_samples()
         self.extract_df_info_fewer_samples(wrking_lmda_list)
 
+    def reset_polynomial_degree(self):
+        # based on the experiments
+        self.radius_degree = 10
+        self.phase_degree = 4
+        self.xcenter_degree = 10
+        self.ycenter_degree = 10
+
     def extract_fewer_samples(self):
         """
-        1. Pick fewer lambda samples from the dataframe for pick eg. 7 values
-        in between 7-8 and so on until 11. At the moment the lambda samples
+        1. Pick fewer lambda samples uniformly from the dataframe for pick eg. 7 values
+        in between 7-8 and so on until 11. At the moment the data contains lambda samples
         are 50 per range (between 7-8). Train the model with these fewer samples
         and interpolate the data for other lambda values.
         """
         # _wrking_df = self._df_list[:]
-        _wrking_df = pd.concat(self._df_list)
+        log.info(f"Length of the df list : {len(self._df_list)}")
+        if(len(self._df_list) > 1):
+            _wrking_df = pd.concat(self._df_list)
+        else:
+            _wrking_df = self._df_list[0]
+        #log.info(f'working df : {_wrking_df}')
         _wrking_df = _wrking_df.sort_values(
             ['Lambda', 'Frequency'], ascending=[True, True])
         _wrking_df.reset_index(drop=True, inplace=True)
@@ -86,9 +110,9 @@ class DataModeling:
         # add the last lambda value to list
         lmbda_sublists.append([lmda_lst[-1]])
         # merge all sublists into one , flatten the list of lists into one
-        log.info(f'Lambda Sublists : {lmbda_sublists}')
+        log.debug(f'Lambda Sublists : {lmbda_sublists}')
         merged_list = list(itertools.chain(*lmbda_sublists))
-        log.info(f'Length of Lambda List for train/test : {len(merged_list)}')
+        log.debug(f'Length of Lambda List for train/test : {len(merged_list)}')
         return merged_list
 
 # ---------------------------------------------------------------------------------------
@@ -102,13 +126,31 @@ class DataModeling:
             res_df = _df[_df['Frequency'].isin([self.fq])]
             lambda_vals = res_df['Lambda']  # length here is 200
 
+            radius_deg = res_df['radius_degree']
+            radius_deg = list(dict.fromkeys(radius_deg))
+            self.radius_degree = radius_deg[-1] #one value
+
+            ph_deg = res_df['phase_degree']
+            ph_deg = list(dict.fromkeys(ph_deg))
+            self.phase_degree = ph_deg[-1] #one value
+
+            xc_deg = res_df['xc_degree']
+            xc_deg = list(dict.fromkeys(xc_deg))
+            self.xcenter_degree = xc_deg[-1] #one value
+
+            yc_deg = res_df['yc_degree']
+            yc_deg = list(dict.fromkeys(yc_deg))
+            self.ycenter_degree = yc_deg[-1] #one value
+
+            #log.info(f'deg r = {self.radius_degree}, ph = {self.phase_degree}, xc = {self.xcenter_degree}, yc = {self.ycenter_degree}')
+
             self.model_radius(lambda_vals, res_df[RADIUS])
             self.model_phase(lambda_vals, res_df[ANGLE])
             self.model_xcenter(lambda_vals, res_df[X_CENTER])
             self.model_ycenter(lambda_vals, res_df[Y_CENTER])
 
             # models are prepared.. it's time for some predictions ;)
-            log.info(f'Predictions for the frequency {self.fq} is,')
+            log.debug(f'Predictions for the frequency {self.fq} is,')
             for l_val in lambda_vals:
                 self.predict_radius(l_val)
                 self.predict_phase(l_val)
@@ -136,7 +178,7 @@ class DataModeling:
         df_name = '{0}/' + f'final_df.csv'
         self.final_df.to_csv(os.path.realpath(
             df_name.format(utils.Utils().get_results_dir_path())))
-        # Plot the True value and Predicted Magnitude values w.r.t frequency as function of lambda
+        # Plot the True and Predicted Magnitude values w.r.t frequency as function of lambda
         PlotPrediction(self.final_df)
 # -------------------------------------------------------------------------------------------
 
@@ -151,8 +193,27 @@ class DataModeling:
             # use the res_df to extract the fewer lambda samples
             _wrking_df = res_df[res_df['Lambda'].isin(_lambda_list)]
 
-            lambda_vals = _wrking_df['Lambda']  # length here is 68
+            lambda_vals = _wrking_df['Lambda']  # length here is 69
             org_lambda_list = res_df['Lambda']  # length here is 200
+
+            radius_deg = _wrking_df['radius_degree']
+            radius_deg = list(dict.fromkeys(radius_deg))
+            self.radius_degree = radius_deg[-1] #one value
+
+            ph_deg = _wrking_df['phase_degree']
+            ph_deg = list(dict.fromkeys(ph_deg))
+            self.phase_degree = ph_deg[-1] #one value
+
+            xc_deg = _wrking_df['xc_degree']
+            xc_deg = list(dict.fromkeys(xc_deg))
+            self.xcenter_degree = xc_deg[-1] #one value
+
+            yc_deg = _wrking_df['yc_degree']
+            yc_deg = list(dict.fromkeys(yc_deg))
+            self.ycenter_degree = yc_deg[-1] #one value
+
+            #log.info(f'deg r = {self.radius_degree}, ph = {self.phase_degree}, xc = {self.xcenter_degree}, yc = {self.ycenter_degree}')
+
             # training is done on the fewer lambda samples
             self.model_radius(lambda_vals, _wrking_df[RADIUS])
             self.model_phase(lambda_vals, _wrking_df[ANGLE])
@@ -160,7 +221,7 @@ class DataModeling:
             self.model_ycenter(lambda_vals, _wrking_df[Y_CENTER])
 
             # models are prepared.. it's time for some predictions ;)
-            log.info(f'Predictions for the frequency {self.fq} is,')
+            log.debug(f'Predictions for the frequency {self.fq} is,')
             for l_val in org_lambda_list:  # predict for all the lambda values
                 self.predict_radius(l_val)
                 self.predict_phase(l_val)
@@ -212,9 +273,8 @@ class DataModeling:
         y = np.array(radii)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.6, random_state=10)
-        #log.info(f'train:test : 40:60')
-        if self._plot == 'True':
+            X, y, test_size=0.2, random_state=10)
+        if self._plot:
             rcParams['axes.spines.top'] = False
             rcParams['axes.spines.right'] = False
 
@@ -230,7 +290,7 @@ class DataModeling:
         y_train = y_train[x_train[:, 0].argsort()]
         x_train = x_train[x_train[:, 0].argsort()]
 
-        self.radii_poly = PolynomialFeatures(degree=9)
+        self.radii_poly = PolynomialFeatures(degree=self.radius_degree)
         x_poly = self.radii_poly.fit_transform(x_train)
 
         self.reg_radius = LinearRegression()
@@ -238,9 +298,9 @@ class DataModeling:
 
         xtest_poly = self.radii_poly.fit_transform(x_test)
         y_pred = self.reg_radius.predict(xtest_poly)
-
-        log.debug(f'Model Score (Radius) : {res.score(x_poly, y_train)}')
-        if self._plot == 'True':
+        model_score = res.score(x_poly, y_train)
+        log.debug(f'Model Score (Radius) : {model_score}')
+        if self._plot:
             ax1.set_title('Regression w.r.t Radius')
             ax1.set_xlabel('Lambda')
             ax1.set_ylabel('Radius')
@@ -250,6 +310,7 @@ class DataModeling:
             f_name = '{0}/' + f'Radius[Model]_{self.fq}.png'
             plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
             plt.close()
+        return model_score
 
 
 # ---------------------------------------------------------------------------
@@ -272,9 +333,9 @@ class DataModeling:
         y = np.array(angle)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.6, random_state=10)
+            X, y, test_size=0.2, random_state=10)
 
-        if self._plot == 'True':
+        if self._plot:
             rcParams['axes.spines.top'] = False
             rcParams['axes.spines.right'] = False
 
@@ -290,17 +351,17 @@ class DataModeling:
         y_train = y_train[x_train[:, 0].argsort()]
         x_train = x_train[x_train[:, 0].argsort()]
 
-        self.ph_poly = PolynomialFeatures(degree=4)
+        self.ph_poly = PolynomialFeatures(degree=self.phase_degree)
         x_poly = self.ph_poly.fit_transform(x_train)
 
         self.reg_phase = LinearRegression()
         res = self.reg_phase.fit(x_poly, y_train)
-
-        log.debug(f'Model Score (Angle) : {res.score(x_poly, y_train)}')
+        model_score = res.score(x_poly, y_train)
+        log.debug(f'Model Score (Angle) : {model_score}')
         # pred_ph_deg = math.degrees(Ph)
         # v2  = np.rad2deg(Ph)
         # print('predicted angle in degrees : {}, {}'.format(pred_ph_deg, v2))
-        if self._plot == 'True':
+        if self._plot:
             ax2.set_title('Regression w.r.t Angle')
             ax2.set_xlabel('Lambda')
             ax2.set_ylabel('Angle')
@@ -311,7 +372,7 @@ class DataModeling:
             f_name = '{0}/' + f'Phase[Model]_{self.fq}.png'
             plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
             plt.close()
-
+        return model_score
 # ---------------------------------------------------------------------------
     def predict_phase(self, lambda_val):
         pred_an = self.reg_phase.predict(
@@ -331,9 +392,9 @@ class DataModeling:
         y = np.array(x_center)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.6, random_state=10)
+            X, y, test_size=0.2, random_state=10)
 
-        if self._plot == 'True':
+        if self._plot:
             rcParams['axes.spines.top'] = False
             rcParams['axes.spines.right'] = False
 
@@ -349,14 +410,14 @@ class DataModeling:
         y_train = y_train[x_train[:, 0].argsort()]
         x_train = x_train[x_train[:, 0].argsort()]
 
-        self.poly_xc = PolynomialFeatures(degree=9)
+        self.poly_xc = PolynomialFeatures(degree=self.xcenter_degree)
         x_poly = self.poly_xc.fit_transform(x_train)
 
         self.reg_xc = LinearRegression()
         res = self.reg_xc.fit(x_poly, y_train)
-
-        log.debug(f'Model Score (X-Center) : {res.score(x_poly, y_train)}')
-        if self._plot == 'True':
+        model_score = res.score(x_poly, y_train)
+        log.debug(f'Model Score (X-Center) : {model_score}')
+        if self._plot:
             ax3.set_title('Regression w.r.t X_Center')
             ax3.set_xlabel('Lambda')
             ax3.set_ylabel('X_Center')
@@ -367,7 +428,7 @@ class DataModeling:
             f_name = '{0}/' + f'X-Coordinate[Model]_{self.fq}.png'
             plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
             plt.close()
-
+        return model_score
 
 # ---------------------------------------------------------------------------
 
@@ -388,8 +449,8 @@ class DataModeling:
         y = np.array(y_center)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.6, random_state=10)
-        if self._plot == 'True':
+            X, y, test_size=0.2, random_state=10)
+        if self._plot:
             rcParams['axes.spines.top'] = False
             rcParams['axes.spines.right'] = False
 
@@ -405,14 +466,15 @@ class DataModeling:
         y_train = y_train[x_train[:, 0].argsort()]
         x_train = x_train[x_train[:, 0].argsort()]
 
-        self.poly_yc = PolynomialFeatures(degree=9)
+        self.poly_yc = PolynomialFeatures(degree=self.ycenter_degree)
         x_poly = self.poly_yc.fit_transform(x_train)
 
         self.reg_yc = LinearRegression()
         res = self.reg_yc.fit(x_poly, y_train)
 
-        log.debug(f'Model Score (Y-Center) :  {res.score(x_poly, y_train)}')
-        if self._plot == 'True':
+        model_score = res.score(x_poly, y_train)
+        log.debug(f'Model Score (Y-Center) :  {model_score}')
+        if self._plot:
             ax4.set_title('Regression w.r.t y_center')
             ax4.set_xlabel('Lambda')
             ax4.set_ylabel('Y_Center')
@@ -423,6 +485,7 @@ class DataModeling:
             f_name = '{0}/' + f'Y-coordinate[Model]_{self.fq}.png'
             plt.savefig(os.path.realpath(f_name.format(self._model_dir)))
             plt.close()
+        return model_score
 
 # ---------------------------------------------------------------------------
     def predict_Yc(self, lambda_val):
@@ -441,9 +504,9 @@ class DataModeling:
         # _df = self._df_list[-1]
         _dframe = _df[_df.Lambda == l_val]
         org_crd = _dframe['coordinates'].to_list()
-        log.info('Freq: {0} , Lambda: {1}'.format(
+        log.debug('Freq: {0} , Lambda: {1}'.format(
             _dframe.iloc[0]['Frequency'], _dframe.iloc[0]['Lambda']))  # .iloc[0]['A']
-        log.info(f'\tTrue Coordinate : {org_crd[-1]}')
+        log.debug(f'\tTrue Coordinate : {org_crd[-1]}')
         self.freqncy_list.append(self.fq)
         self.lambda_list.append(l_val)
         if len(org_crd) == LIST_SIZE:
@@ -458,8 +521,8 @@ class DataModeling:
         else:
             log.error("Please check the coordinates extraction.")
 
-        log.info(f'Predicted Coordinate : ({X_coord}, {Y_coord})')
-        logging.info('-------------------------------------------------------')
+        log.debug(f'Predicted Coordinate : ({X_coord}, {Y_coord})')
+        logging.debug('-------------------------------------------------------')
         self.pred_x_list.append(X_coord)
         self.pred_y_list.append(Y_coord)
         cn = complex(X_coord, Y_coord)

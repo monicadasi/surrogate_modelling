@@ -40,6 +40,15 @@ class Utils(metaclass=Singleton):
             # plots directory already exists
             pass
         return _plt_dir
+    
+    def get_circle_plots_dir_path(self) -> str:
+        _plt_dir = self.get_dir_path() + '\\circle_plots'
+        try:
+            os.makedirs(_plt_dir)
+        except FileExistsError:
+            # plots directory already exists
+            pass
+        return _plt_dir
 
     def get_models_dir_path(self) -> str:
         _model_dir = self.get_dir_path() + '\\models'
@@ -58,6 +67,16 @@ class Utils(metaclass=Singleton):
             # model directory already exists
             pass
         return _log_dir
+    
+    def create_freq_dir(self, frq_name)->str:
+        _fq_dir = f'frq_{frq_name}'
+        _model_dir = self.get_circle_plots_dir_path() + '\\' + _fq_dir
+        try:
+            os.makedirs(_model_dir)
+        except FileExistsError:
+            # model directory already exists
+            pass
+        return _model_dir
 
     def _read_config(self):
         with open('config.json', 'r') as f:

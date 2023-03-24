@@ -106,9 +106,9 @@ class DataParser(metaclass=Singleton):
 
         self.frf_df = pd.concat(df_list, ignore_index=True)
         self.frf_df.to_csv(os.path.realpath(
-            '{0}/final_frf_data.csv'.format(_data_path)))
+            '{0}/final_frf_data.csv'.format(_data_path)), float_format='%.14f')
         self.frf_df.to_csv(os.path.realpath(
-            '{0}/final_frf_data.txt'.format(_data_path)), sep='\t', index=False)
+            '{0}/final_frf_data.txt'.format(_data_path)), sep='\t', index=False, float_format='%.14f')
         return self.frf_df
 
     def get_freq_data(self) -> pd.DataFrame:

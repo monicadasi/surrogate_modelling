@@ -1,5 +1,7 @@
 import argparse
 import logging
+from xy_plot import CircleParamPlot
+from least_squares_circle_classic import LeastSquaresCircleClassic
 
 from utils import Utils
 from base_logger import BaseLogger
@@ -8,6 +10,7 @@ from data_parser import DataParser
 from data_visualizer import DataVisualizer
 from least_squares_circle import LeastSquaresCircle
 from three_point_circle import ThreePointCircle
+from least_squares_circle_jacobian import LeastSquaresCircleJacobian
 
 from data_modeling import DataModeling
 from magnitude_plot import MagnitudePlot
@@ -28,7 +31,7 @@ def main(log_level: str, draw_plot: str):
 
 def parse_freq_data():
     dataparser = DataParser()
-    if Utils()._parse_data() == "True":
+    if Utils()._parse_data() == True:
         log.info("Processing the frequency data ...")
         dataparser.parse_freq_data()
         dataparser.process_data()
@@ -44,7 +47,7 @@ def parse_freq_data():
 
 def visualize_data():
     # draw the plot only the config value to draw is TRUE
-    if Utils()._draw_plots() == 'True':
+    if Utils()._draw_plots() == True:
         _dv = DataVisualizer()
         _dv.plot_frf_data()
         _dv.draw_mag_parameter_plot()
@@ -55,13 +58,29 @@ def create_model_predict():
     _lsc = LeastSquaresCircle()
     _lsc.process_circle_extraction()
     _df_list = _lsc._get_df_list()
+
+    # _lscc = LeastSquaresCircleClassic()
+    # _lscc.process_circle_extraction()
+    # _dfc_list = _lscc._get_df_list()
+
+    # process circle extraction using least squares jacobian method
+    # _lscj = LeastSquaresCircleJacobian()
+    # _lscj.process_circle_extraction()
+    # _df_list = _lscj._get_df_list()
+
     # _tpc = ThreePointCircle()
     # _tpc.process_circle_extraction()
     # _df_list = _tpc._get_df_list()
-    _dm = DataModeling(_df_list)
+
+    #log.info(f"Df list in main : {_df_list}")
+    _dm = DataModeling()
+    _dm.set_df_list(_df_list)
     _dm.model_data()
     _final_df = _dm.get_final_df()
     MagnitudePlot(_final_df)
+    #CircleParamPlot(_df_list)
+
+
     # if Utils()._draw_plots() == 'True':
     #     _final_df = _dm.get_final_df()
     #     MagnitudePlot(_final_df)
@@ -72,7 +91,7 @@ if __name__ == "__main__":
         description='Surrogate Modeling Using Complex Valued Frequency Domain Simulation Data')
     parser.add_argument('-l', '--log_level', type=str, default='info',
                         choices=['debug', 'info'], help='Change the log level to Debug or Info')
-    parser.add_argument('-dp', '--draw_plot', type=str, default=False,
+    parser.add_argument('-dp', '--draw_plot', type=str, default= 'False',
                         choices=['True', 'False'],
                         help='True if the plots (models, relationship plots) as to be\
                               saved into the local directory, False otherwise')

@@ -1,8 +1,10 @@
 import os
 import logging
+import matplotlib
 import pandas as pd
 from utils import Utils
 from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
 
 
 class MeanSquaredError:
@@ -35,7 +37,25 @@ class MeanSquaredError:
         logging.info(
             "MSE calculation completed, check the csv file for detailed results")
         logging.info(
-            f'Max Value of MSE :{max_value}, Lambda : {lmda_lst[max_index]}')
+            f'Max Value of MSE : {max_value}, Lambda : {lmda_lst[max_index]}')
+        fig, ax = plt.subplots()
+        ax.plot(lmda_lst, _mse_list)
+
+        # set labels for x and y axis
+        ax.set_xlabel('Lambda')
+        ax.set_ylabel('Mean Squared Error (MSE)')
+
+        # set title for the plot
+        ax.set_title('MSE Vs Lambda Parameter')
+
+        _dir = Utils().get_results_dir_path()
+        mse_plt = '{0}/' + f'MSE_Plot.png'
+        p_name = os.path.realpath(mse_plt.format(_dir))
+        fig.savefig(p_name, bbox_inches='tight', dpi=150)
+        fig.clf()
+        fig.clear()
+        matplotlib.pyplot.close()
+
         _mse_df = pd.DataFrame(
             list(zip(lmda_lst, _mse_list, _mse_form_list)), columns=['Lambda', 'MSE', 'MSE_formula'])
         _name = '{0}/' + f'mse_df.csv'
