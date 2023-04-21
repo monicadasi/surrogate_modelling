@@ -69,6 +69,7 @@ class MeanSquaredError:
             diff = t_mag[i] - p_mag[i]  # observed - predicted
             sq_diff = diff**2  # square of the diff
             _sum = _sum + sq_diff  # sum these difference for the entire 'n'
+            logging.debug(f"TrueMag : {t_mag[i]}, PredMag : {p_mag[i]}, sq_diff:{sq_diff}, Sum: {_sum}")
         # endfor
         _MSE = _sum/n
         return _MSE

@@ -70,7 +70,7 @@ class DataModeling(metaclass=Singleton):
         # based on the experiments
         self.radius_degree = 10
         self.phase_degree = 4
-        self.xcenter_degree = 10
+        self.xcenter_degree = 12
         self.ycenter_degree = 10
 
     def extract_fewer_samples(self):
@@ -112,7 +112,7 @@ class DataModeling(metaclass=Singleton):
         # merge all sublists into one , flatten the list of lists into one
         log.debug(f'Lambda Sublists : {lmbda_sublists}')
         merged_list = list(itertools.chain(*lmbda_sublists))
-        log.debug(f'Length of Lambda List for train/test : {len(merged_list)}')
+        log.info(f'Length of Lambda List for train/test : {len(merged_list)}')
         return merged_list
 
 # ---------------------------------------------------------------------------------------
@@ -126,21 +126,21 @@ class DataModeling(metaclass=Singleton):
             res_df = _df[_df['Frequency'].isin([self.fq])]
             lambda_vals = res_df['Lambda']  # length here is 200
 
-            radius_deg = res_df['radius_degree']
-            radius_deg = list(dict.fromkeys(radius_deg))
-            self.radius_degree = radius_deg[-1] #one value
+            # radius_deg = res_df['radius_degree']
+            # radius_deg = list(dict.fromkeys(radius_deg))
+            # self.radius_degree = radius_deg[-1] #one value
 
-            ph_deg = res_df['phase_degree']
-            ph_deg = list(dict.fromkeys(ph_deg))
-            self.phase_degree = ph_deg[-1] #one value
+            # ph_deg = res_df['phase_degree']
+            # ph_deg = list(dict.fromkeys(ph_deg))
+            # self.phase_degree = ph_deg[-1] #one value
 
-            xc_deg = res_df['xc_degree']
-            xc_deg = list(dict.fromkeys(xc_deg))
-            self.xcenter_degree = xc_deg[-1] #one value
+            # xc_deg = res_df['xc_degree']
+            # xc_deg = list(dict.fromkeys(xc_deg))
+            # self.xcenter_degree = xc_deg[-1] #one value
 
-            yc_deg = res_df['yc_degree']
-            yc_deg = list(dict.fromkeys(yc_deg))
-            self.ycenter_degree = yc_deg[-1] #one value
+            # yc_deg = res_df['yc_degree']
+            # yc_deg = list(dict.fromkeys(yc_deg))
+            # self.ycenter_degree = yc_deg[-1] #one value
 
             #log.info(f'deg r = {self.radius_degree}, ph = {self.phase_degree}, xc = {self.xcenter_degree}, yc = {self.ycenter_degree}')
 

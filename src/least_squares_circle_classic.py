@@ -17,6 +17,7 @@ from scipy import optimize
 from numpy import *
 from data_parser import DataParser
 from utils import Utils
+import numpy_indexed as npi
 
 log = logging.getLogger(__name__)
 
@@ -151,34 +152,45 @@ class LeastSquaresCircleClassic:
     #----------------------------------------------------------------------------------------------------------------
 
     def pick_every_x_element(self, lst, index):
-        print('calling pick_every_x_element')
+        log.debug('calling pick_every_x_element')
         
         global step
-        step = 2
+        step = 20
         pickd_lm = lst[index][1]
         pickd_frq = lst[index][0]
         
-        print(f'Picked lambda -->  {pickd_lm}, Picked Frq ---> {pickd_frq}')
+        log.debug(f'Picked lambda -->  {pickd_lm}, Picked Frq ---> {pickd_frq}')
         
         # [34.770000457764, 7.0, 0.12457949668169, -0.48617362976074]
         # Filter based on the first column (index 1, which is lambda value)
         filtered_data = list(filter(lambda x: x[1] == pickd_lm, lst))
+        filtered_data_array = np.array(filtered_data)
+        searched_values = np.array([lst[index]])
+        _result = npi.indices(filtered_data_array, searched_values)
+        #print("Filtered Data:", filtered_data_array)
+        #print("Result",_result)
+        if _result is not None:
+            idx = _result[-1]
+        else:
+            idx = -1
+
+        #print("idx:", idx)
         
         lst_cp_r = filtered_data[:]
         lst_cp_l = filtered_data[:]
         
-        index_2d = [(i, x.index(pickd_frq)) for i, x in enumerate(filtered_data) if pickd_frq in x]
-        index = index_2d[0][0] # get the row
-        print(f"Extracted new Index2d : {index_2d}, index of row : {index}")
+        # index_2d = [(i, x.index(pickd_frq)) for i, x in enumerate(filtered_data) if pickd_frq in x]
+        # index = index_2d[0][0] # get the row
+        # print(f"Extracted new Index2d : {index_2d}, index of row : {index}")
 
         # Check if the given index is valid
-        if index < 0 or index >= len(lst_cp_r):
+        if idx < 0 or idx >= len(lst_cp_r):
             return None
         
-        # Extract every 10th element from the sublist, starting from the given index
-        r_sublist = lst_cp_r[index::step]
-        # Extract every 10th element to the left sublist, starting from the given index
-        sub_slice = lst_cp_l[:index+1]
+        # Extract every Xth element from the sublist, starting from the given index
+        r_sublist = lst_cp_r[idx::step]
+        # Extract every Xth element to the left sublist, starting from the given index
+        sub_slice = lst_cp_l[:idx+1]
         l_sublist = sub_slice[::-step]
 
         l_sublist = list(reversed(l_sublist))
@@ -190,18 +202,21 @@ class LeastSquaresCircleClassic:
 #----------------------------------------------------------------------------------------------------------------
 
     def extract_neighbours(self, idx):
-        print(f'extract_neighbours at index: {idx}')
+        log.debug(f'extract_neighbours at index: {idx}')
         global neighbours
-        neighbours = 10
+        neighbours = 14
         orgDFs = self.orgDF_list[:]  # copy list into new variable
         _pick = orgDFs[idx]
+        #print("Pick :", _pick)
         extract_xy = _pick[-2:]  # type list
         xy_tuple = tuple(extract_xy)
 
         # copy list into new variable so we don't change it
         main_list = orgDFs[:]
+        # pickd_lm = main_list[idx][1]
+        # filtered_data = list(filter(lambda x: x[1] == pickd_lm, main_list))
         _res_list = self.pick_every_x_element(main_list, idx)
-        #print(_res_list)
+        # _res_list = filtered_data
 
         # update the index with the new working list
         _new_idx = _res_list.index(_pick)
@@ -209,7 +224,7 @@ class LeastSquaresCircleClassic:
         
         # account for edges for left slice for the last element in the list
         # internal logic behind the left slice
-        # max((0, left_sclice), (len(list) - <req.num.neightbours>)), min(<idx>, <idx-1>),
+        # max((0, left_slice), (len(list) - <req.num.neightbours>)), min(<idx>, <idx-1>),
         # gives the exact neightbours otherwise would get one less neighbour
         
         left_slice = min(max(0, left_slice), len(_res_list) - neighbours)

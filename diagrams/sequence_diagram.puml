@@ -1,0 +1,40 @@
+@startuml
+actor main.py #red
+
+participant DataParser
+participant CircleFit
+participant "DataModeling\n& Predictions" as DataModeling
+participant MSE
+
+main.py [#CadetBlue]-> DataParser: Process FRFs Data
+activate DataParser #CadetBlue
+DataParser [#CadetBlue]-> DataParser: Create the dataframe with \n the required information 
+note right of DataParser: Frequency, Lambda,\nComplex Coordinates,\nPhase, and Magnitude
+DataParser -[#CadetBlue]-> main.py
+deactivate DataParser
+
+main.py[#DarkSalmon]->CircleFit:\t \t  Process Circle Extraction
+activate CircleFit#DarkSalmon
+CircleFit [#DarkSalmon]-> CircleFit: Extract the circle parameters...
+note over CircleFit: 1. Filter the Frequencies based on the\n    lambda value from dataframe\n2. Extract the neighboring frequencies\n3. Pass the coordinate to the\n    least square circle algorithm \n4. Compute the center, radius, phase
+CircleFit-[#DarkSalmon]->main.py
+deactivate CircleFit
+
+
+main.py[#SteelBlue]->DataModeling:\t\t\t\t   Model the Circle Parameters
+activate DataModeling#SteelBlue
+DataModeling [#SteelBlue]-> DataModeling: Model the circle parameters\nusing polynomial regression
+note right of DataModeling: After data training is completed, use the\ncreated model to interpolate the values \nof the unknown "lambda" parameters.
+DataModeling [#SteelBlue]-> MSE: Calculate Mean Square Error
+activate MSE#Tomato
+MSE [#Tomato]-> DataModeling: Get the True and Predicted Coordinates
+DataModeling-[#SteelBlue]->MSE:(TrueMagnitude, PredictedMagnitude)
+MSE [#Tomato]-> MSE: Calculate the MSE, \nbetween the true\nand predicted values
+MSE [#Tomato]-> DataModeling: Determine the max MSE
+note over DataModeling: Use max MSE for model verification
+deactivate MSE 
+DataModeling -[#SteelBlue]-> main.py: Modeling and Predictions completed...
+deactivate DataModeling
+
+
+@enduml

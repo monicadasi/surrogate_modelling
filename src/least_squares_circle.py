@@ -20,13 +20,14 @@ from data_parser import DataParser
 from utils import Utils
 
 from matplotlib import pyplot as p
+import numpy_indexed as npi
 
 import skg
 
 log = logging.getLogger(__name__)
 
-MAX_NEIGH = 18
-MAX_STEP_WIDTH = 18
+MAX_NEIGH = 25
+MAX_STEP_WIDTH = 25
 MAX_REF_ANGLE = 21.
 
 # REF_ANGLE_THRESHOLDS = [14, 16]
@@ -50,7 +51,7 @@ class LeastSquaresCircle:
         self.frq_dist = []
         self.calc_angle = 0.
 
-        self.ref_angle = 15.
+        self.ref_angle = 19.
 
         self.ref_angle_thresholds = [self.ref_angle - 0.5, self.ref_angle + 2]
 
@@ -268,13 +269,21 @@ class LeastSquaresCircle:
         # Example data : [34.770000457764, 7.0, 0.12457949668169, -0.48617362976074]
         # Filter based on the lambda value column (index 1)
         filtered_data = list(filter(lambda x: x[1] == pickd_lm, lst))
-
         lst_cp_r = filtered_data[:]
         lst_cp_l = filtered_data[:]
 
-        filtered_array = list(filter(lambda x: pickd_frq in x, filtered_data))
-        if filtered_array:
-            index = filtered_data.index(filtered_array[0])
+        # filtered_array = list(filter(lambda x: pickd_frq in x, filtered_data))
+        # if filtered_array:
+        #     index = filtered_data.index(filtered_array[0])
+        # else:
+        #     index = -1
+
+        filtered_data_array = np.array(filtered_data)
+        searched_values = np.array([lst[index]])
+        _result = npi.indices(filtered_data_array, searched_values)
+
+        if _result is not None:
+            index = _result[-1]
         else:
             index = -1
 
@@ -671,6 +680,7 @@ class LeastSquaresCircle:
 
         frq_list = frf_df6['Frequency'].to_list()
         _frqs = list(dict.fromkeys(frq_list))  # remove the duplicate freq.
+
         #log.info(frq_list)
         # log.info(f'Frequency List Size : {len(_frqs)}')
         # _frqs = [34.200000762939 , 34.209999084473 , 34.220001220703 , 34.229999542236 , 34.240001678467 ,

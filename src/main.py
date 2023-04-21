@@ -1,6 +1,5 @@
 import argparse
 import logging
-from xy_plot import CircleParamPlot
 from least_squares_circle_classic import LeastSquaresCircleClassic
 
 from utils import Utils
