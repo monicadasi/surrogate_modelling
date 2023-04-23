@@ -1,3 +1,7 @@
+'''
+Singleton template class
+'''
+
 class Singleton(type):
     _instances = {}
 

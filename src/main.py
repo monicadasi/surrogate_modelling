@@ -1,3 +1,14 @@
+'''
+main file for running the prediction for the surrogate model.
+Run help for different configuration that can be used as arguments.
+
+Implemented by Monica Dasi
+Developed for Master's Thesis
+Topic : Surrogate Modeling For Freequency Domain Simulation Data
+Semester : SoSe 2023
+Department of Computer Science (Fb2), Frankfurt University of Applied Sciences
+'''
+
 import argparse
 import logging
 from least_squares_circle_classic import LeastSquaresCircleClassic

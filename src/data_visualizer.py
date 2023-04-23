@@ -1,3 +1,14 @@
+'''
+Data Visualizer Class used for visualizing the original data from the simulation
+- This class is used for visualizing the Bode plot and Polar plot
+
+Implemented by Monica Dasi
+Developed for Master's Thesis
+Topic : Surrogate Modeling For Freequency Domain Simulation Data
+Semester : SoSe 2023
+Department of Computer Science (Fb2), Frankfurt University of Applied Sciences
+'''
+
 import os
 import random
 import logging

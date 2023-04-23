@@ -1,3 +1,16 @@
+'''
+Data Parser Class used for parsing the raw data from the simulation
+- This class does the data preparation required for the circle extraction.
+- It create dataframe containing S11 parameters, frequency, lambda parameter,
+  magnitude and phase (radians)
+
+Implemented by Monica Dasi
+Developed for Master's Thesis
+Topic : Surrogate Modeling For Freequency Domain Simulation Data
+Semester : SoSe 2023
+Department of Computer Science (Fb2), Frankfurt University of Applied Sciences
+'''
+
 import os
 import natsort
 import pandas as pd

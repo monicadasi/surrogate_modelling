@@ -1,3 +1,15 @@
+'''
+Least Squares Classic Circle class is an intial implementation that done and
+is used for fitting the extracted S11 parameters of the neighboring frequencies 
+using adjacent neighbors and stepwidth picking strategy.
+
+Implemented by Monica Dasi
+Developed for Master's Thesis
+Topic : Surrogate Modeling For Freequency Domain Simulation Data
+Semester : SoSe 2023
+Department of Computer Science (Fb2), Frankfurt University of Applied Sciences
+'''
+
 import os
 import math
 import random

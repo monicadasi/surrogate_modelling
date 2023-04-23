@@ -1,3 +1,13 @@
+'''
+Bode Plot for the predicted S11 Parameters
+
+Implemented by Monica Dasi
+Developed for Master's Thesis
+Topic : Surrogate Modeling For Freequency Domain Simulation Data
+Semester : SoSe 2023
+Department of Computer Science (Fb2), Frankfurt University of Applied Sciences
+'''
+
 import plotly.graph_objects as go
 from utils import Utils
 import os

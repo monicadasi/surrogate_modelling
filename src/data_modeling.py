@@ -1,3 +1,16 @@
+'''
+Data Modeling Class used for modeling the circle parameters
+- This class also down sample lambda parameter values
+- Creates the model for circle parameters using polynomial regression
+- Performs the predicts on unknown data
+- Extract the original value of the S-parameters for the predicted data
+
+Implemented by Monica Dasi
+Developed for Master's Thesis
+Topic : Surrogate Modeling For Freequency Domain Simulation Data
+Semester : SoSe 2023
+Department of Computer Science (Fb2), Frankfurt University of Applied Sciences
+'''
 import itertools
 import os
 import utils

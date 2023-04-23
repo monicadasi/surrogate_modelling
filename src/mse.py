@@ -1,3 +1,13 @@
+'''
+Mean Squared Error Calculation Class.
+
+Implemented by Monica Dasi
+Developed for Master's Thesis
+Topic : Surrogate Modeling For Freequency Domain Simulation Data
+Semester : SoSe 2023
+Department of Computer Science (Fb2), Frankfurt University of Applied Sciences
+'''
+
 import os
 import logging
 import matplotlib

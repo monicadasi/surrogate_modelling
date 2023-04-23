@@ -1,3 +1,11 @@
+'''
+Base logger class for console and text file logging
+
+Implemented by Monica Dasi
+Developed for Master's Thesis
+Topic : Surrogate Modeling For Freequency Domain Simulation Data - SoSe 2023
+Department of Computer Science (Fb2), Frankfurt University of Applied Sciences
+'''
 import os
 import logging
 import utils
