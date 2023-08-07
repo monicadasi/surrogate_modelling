@@ -1,2 +1,6 @@
+# ignore these file types for language statistics
 *.html linguist-vendored
 results/* linguist-vendored
+
+# consider these file types for language statistics
+*.py linguist-language=Python
